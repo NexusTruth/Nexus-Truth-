@@ -6,10 +6,12 @@ let tray = null;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 1200,
-        height: 700,
-        backgroundColor: '#ffffff',
+        width: 800,
+        height: 450,
+        resizable: false,
         frame: false,
+        transparent: true,
+        backgroundColor: '#00000000',
         icon: path.join(__dirname, 'logo.png'),
         webPreferences: {
             nodeIntegration: true,
@@ -19,21 +21,26 @@ function createWindow() {
 
     mainWindow.loadFile('index.html');
 
+    // Handles window close events by hiding to system tray
     mainWindow.on('close', function (event) {
-        event.preventDefault();
-        mainWindow.hide(); // Hides to the taskbar/tray instead of killing the node
+        if (!app.isQuitting) {
+            event.preventDefault();
+            mainWindow.hide();
+        }
+        return false;
     });
 }
 
 app.whenReady().then(() => {
     createWindow();
 
-    // Points specifically to your globe logo file
+    // Sets the toolbar tray icon to your globe logo
     tray = new Tray(path.join(__dirname, 'logo.png'));
     
     const contextMenu = Menu.buildFromTemplate([
         { label: 'Open Nexus Truth', click: () => mainWindow.show() },
-        { label: 'Quit', click: () => {
+        { label: 'Quit Node', click: () => {
+            app.isQuitting = true;
             mainWindow.destroy();
             app.quit();
         }}
@@ -42,7 +49,7 @@ app.whenReady().then(() => {
     tray.setToolTip('Nexus Truth AI Node');
     tray.setContextMenu(contextMenu);
 
-    // Allows users to open the UI with a simple left-click on the toolbar icon
+    // Restores the interface immediately when clicking the globe icon in the toolbar
     tray.on('click', () => {
         mainWindow.show();
     });
@@ -51,11 +58,5 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();
-    }
-});
-
-app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
     }
 });

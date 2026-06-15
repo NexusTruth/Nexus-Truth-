@@ -1,67 +1,158 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Nexus Truth Client</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primaryBlue: #2563eb;
+            --lightBlue: #eff6ff;
+            --darkBlue: #1e3a8a;
+            --textMain: #0f172a;
+            --textMuted: #475569;
+            --successGreen: #10b981;
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             user-select: none;
         }
 
         body {
-            background-color: #0b0f19;
-            color: #ffffff;
-            width: 400px;
-            height: 600px;
+            background-color: transparent;
+            color: var(--textMain);
+            width: 800px;
+            height: 450px;
             overflow: hidden;
-            border: 1px solid #1e293b;
+            position: relative;
         }
 
-        /* Draggable Header acting as window frame */
+        .app-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background-color: #f8fafc;
+            border-radius: 24px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bg-flare-1 {
+            position: absolute;
+            top: -50px;
+            left: -50px;
+            width: 300px;
+            height: 300px;
+            background: var(--primaryBlue);
+            opacity: 0.08;
+            filter: blur(60px);
+            border-radius: 50%;
+            z-index: 0;
+        }
+
+        .bg-flare-2 {
+            position: absolute;
+            bottom: -100px;
+            right: -50px;
+            width: 400px;
+            height: 400px;
+            background: var(--successGreen);
+            opacity: 0.05;
+            filter: blur(70px);
+            border-radius: 50%;
+            z-index: 0;
+        }
+
         .app-header {
-            background-color: #0f172a;
-            padding: 15px;
+            padding: 15px 25px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #1e293b;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             -webkit-app-region: drag;
+            position: relative;
+            z-index: 10;
         }
 
-        .brand {
-            font-weight: bold;
-            font-size: 16px;
-            letter-spacing: 1px;
-            color: #38bdf8;
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-globe-placeholder {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-image: radial-gradient(var(--primaryBlue) 20%, transparent 20%), radial-gradient(var(--primaryBlue) 20%, transparent 20%);
+            background-size: 8px 8px;
+            background-position: 0 0, 4px 4px;
+            opacity: 0.8;
+        }
+
+        .brand-nexus {
+            font-weight: 800;
+            font-size: 20px;
+            letter-spacing: 0.5px;
+            color: var(--darkBlue);
+        }
+
+        .brand-truth {
+            font-weight: 800;
+            font-size: 20px;
+            letter-spacing: 0.5px;
+            color: var(--primaryBlue);
         }
 
         .close-btn {
             background: none;
             border: none;
-            color: #64748b;
+            color: var(--textMuted);
             cursor: pointer;
-            font-size: 16px;
+            font-size: 24px;
+            font-weight: bold;
             -webkit-app-region: no-drag;
+            transition: color 0.2s;
         }
 
         .close-btn:hover {
             color: #ef4444;
         }
 
-        .main-container {
-            padding: 25px;
+        .main-content {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: calc(100% - 50px);
-            justify-content: space-between;
+            flex-direction: row;
+            flex: 1;
+            padding: 25px 30px;
+            gap: 30px;
+            position: relative;
+            z-index: 10;
         }
 
-        /* Glowing Status Ring */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px -10px rgba(37, 99, 235, 0.1);
+        }
+
+        .status-column {
+            flex: 0 0 240px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
         .status-box {
             position: relative;
             width: 180px;
@@ -71,96 +162,113 @@
             justify-content: center;
             align-items: center;
             border-radius: 50%;
-            border: 4px solid #10b981;
-            box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+            background: rgba(255, 255, 255, 0.8);
+            border: 6px solid #00ff66; 
+            box-shadow: 0 0 30px rgba(0, 255, 102, 0.3), inset 0 0 15px rgba(0, 255, 102, 0.1);
             transition: all 0.3s ease;
         }
 
         .status-box.stopped {
-            border-color: #ef4444;
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+            border-color: #94a3b8;
+            box-shadow: 0 10px 25px rgba(148, 163, 184, 0.15), inset 0 0 0 transparent;
         }
 
         .status-text {
-            font-size: 12px;
+            font-size: 13px;
+            font-weight: 800;
             text-transform: uppercase;
-            color: #64748b;
+            color: var(--textMuted);
             letter-spacing: 1px;
         }
 
         .status-value {
-            font-size: 22px;
-            font-weight: bold;
+            font-size: 26px;
+            font-weight: 800;
+            color: #00cc52;
             margin-top: 5px;
         }
 
-        /* Info Cards */
-        .metrics-grid {
-            width: 100%;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+        .status-box.stopped .status-value {
+            color: var(--textMuted);
+        }
+
+        .controls-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .metrics-row {
+            display: flex;
             gap: 15px;
-            margin: 20px 0;
+            margin-bottom: 20px;
         }
 
         .metric-card {
-            background-color: #0f172a;
-            border: 1px solid #1e293b;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
+            flex: 1;
+            padding: 18px 15px;
+            text-align: left;
         }
 
         .metric-label {
             font-size: 11px;
-            color: #64748b;
+            font-weight: 800;
+            color: var(--textMuted);
             text-transform: uppercase;
             margin-bottom: 5px;
         }
 
         .metric-value {
-            font-size: 16px;
-            font-weight: bold;
-            color: #f8fafc;
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--textMain);
         }
 
-        /* Controls Slider and Toggle */
-        .control-panel {
-            width: 100%;
-            background-color: #0f172a;
-            border: 1px solid #1e293b;
-            padding: 20px;
-            border-radius: 8px;
+        .control-card {
+            padding: 25px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
-        .control-row {
+        .toggle-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 25px;
         }
 
-        .control-row:last-child {
-            margin-bottom: 0;
+        .control-title {
+            font-size: 17px;
+            font-weight: 800;
+            color: var(--textMain);
         }
 
-        .slider-label {
-            font-size: 13px;
-            color: #94a3b8;
+        .toggle-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        .power-slider {
-            width: 60%;
-            accent-color: #38bdf8;
-            cursor: pointer;
+        .toggle-label {
+            font-size: 18px;
+            font-weight: 800;
+            color: #00cc52;
+            width: 40px;
+            text-align: right;
         }
 
-        /* Big Toggle Switch */
+        .toggle-label.off {
+            color: var(--textMuted);
+        }
+
         .switch {
             position: relative;
             display: inline-block;
-            width: 50px;
-            height: 26px;
+            width: 60px;
+            height: 32px;
         }
 
         .switch input {
@@ -169,127 +277,185 @@
             height: 0;
         }
 
-        .slider {
+        .slider-toggle {
             position: absolute;
             cursor: pointer;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #334155;
+            background-color: #cbd5e1;
             transition: .3s;
             border-radius: 34px;
         }
 
-        .slider:before {
+        .slider-toggle:before {
             position: absolute;
             content: "";
-            height: 18px;
-            width: 18px;
+            height: 24px;
+            width: 24px;
             left: 4px;
             bottom: 4px;
             background-color: white;
             transition: .3s;
             border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
 
-        input:checked + .slider {
-            background-color: #10b981;
+        input:checked + .slider-toggle {
+            background-color: #00ff66;
         }
 
-        input:checked + .slider:before {
-            transform: translateX(24px);
+        input:checked + .slider-toggle:before {
+            transform: translateX(28px);
         }
 
-        /* Instructions Section */
-        .instructions-box {
-            font-size: 11px;
-            color: #64748b;
-            text-align: center;
-            line-height: 1.5;
-            margin-top: 10px;
+        .slider-row {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 12px;
+        }
+
+        .idiot-proof-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--textMuted);
+            margin-top: 4px;
+        }
+
+        .percentage-indicator {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--primaryBlue);
+        }
+
+        .power-slider {
+            width: 100%;
+            accent-color: var(--primaryBlue);
+            cursor: pointer;
+            height: 8px;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
+    <div class="app-wrapper">
+        <div class="bg-flare-1"></div>
+        <div class="bg-flare-2"></div>
 
-    <div class="app-header">
-        <div class="brand">NEXUS TRUTH</div>
-        <button class="close-btn" id="closeBtn">✕</button>
-    </div>
-
-    <div class="main-container">
-        
-        <div class="status-box" id="statusRing">
-            <span class="status-text">Network State</span>
-            <span class="status-value" id="statusLabel">COMPUTING</span>
+        <div class="app-header">
+            <div class="brand-container">
+                <div class="logo-globe-placeholder"></div>
+                <div class="brand">
+                    <span class="brand-nexus">NEXUS</span> <span class="brand-truth">TRUTH</span>
+                </div>
+            </div>
+            <button class="close-btn" id="closeBtn">✕</button>
         </div>
 
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-label">Global Supply</div>
-                <div class="metric-value">1,000,000,000 NXUS</div>
+        <div class="main-content">
+            <div class="status-column glass-card">
+                <div class="status-box" id="statusRing">
+                    <span class="status-text">System Status</span>
+                    <span class="status-value" id="statusLabel">ACTIVE</span>
+                </div>
             </div>
-            <div class="metric-card">
-                <div class="metric-label">Your Balance</div>
-                <div class="metric-value" id="balanceLabel">0.00 NXUS</div>
+
+            <div class="controls-column">
+                <div class="metrics-row">
+                    <div class="metric-card glass-card">
+                        <div class="metric-label">Network Supply</div>
+                        <div class="metric-value">1,000,000,000 NXUS</div>
+                    </div>
+                    <div class="metric-card glass-card">
+                        <div class="metric-label">Total Balance</div>
+                        <div class="metric-value" id="totalLabel">12,450.00 NXUS</div>
+                    </div>
+                    <div class="metric-card glass-card">
+                        <div class="metric-label">Session Earned</div>
+                        <div class="metric-value" id="sessionLabel">0.00 NXUS</div>
+                    </div>
+                </div>
+
+                <div class="control-card glass-card">
+                    <div class="toggle-row">
+                        <div class="control-title">AI Processing</div>
+                        <div class="toggle-wrapper">
+                            <span class="toggle-label" id="toggleStateText">ON</span>
+                            <label class="switch">
+                                <input type="checkbox" id="engineToggle" checked>
+                                <span class="slider-toggle"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="slider-row">
+                        <div class="slider-header">
+                            <div>
+                                <div class="control-title">Compute Allocation</div>
+                                <div class="idiot-proof-text">Select how much power you want to be used for computing in background</div>
+                            </div>
+                            <span class="percentage-indicator" id="sliderValue">50%</span>
+                        </div>
+                        <input type="range" id="powerSlider" class="power-slider" min="10" max="90" value="50">
+                    </div>
+                </div>
             </div>
         </div>
-
-        <div class="control-panel">
-            <div class="control-row">
-                <span class="slider-label">Core Engine Switch</span>
-                <label class="switch">
-                    <input type="checkbox" id="engineToggle" checked>
-                    <span class="slider"></span>
-                </label>
-            </div>
-            <div class="control-row">
-                <span class="slider-label">CPU Power Allocation</span>
-                <input type="range" id="powerSlider" class="power-slider" min="10" max="90" value="50">
-            </div>
-        </div>
-
-        <div class="instructions-box">
-            Nexus software utilizes background processing capacity to execute decentralized AI calculations. Adjust the allocation slider or turn off the switch anytime to free up system memory.
-        </div>
-
     </div>
 
     <script>
-        const { remote } = require('electron');
         const engineToggle = document.getElementById('engineToggle');
+        const toggleStateText = document.getElementById('toggleStateText');
         const statusRing = document.getElementById('statusRing');
         const statusLabel = document.getElementById('statusLabel');
         const powerSlider = document.getElementById('powerSlider');
-        const balanceLabel = document.getElementById('balanceLabel');
+        const sliderValue = document.getElementById('sliderValue');
+        const totalLabel = document.getElementById('totalLabel');
+        const sessionLabel = document.getElementById('sessionLabel');
         const closeBtn = document.getElementById('closeBtn');
 
-        // Close app logic
+        powerSlider.addEventListener('input', (e) => {
+            sliderValue.innerText = e.target.value + '%';
+        });
+
         closeBtn.addEventListener('click', () => {
             window.close();
         });
 
-        // Kill Switch UX Logic
         engineToggle.addEventListener('change', (e) => {
             if (e.target.checked) {
                 statusRing.classList.remove('stopped');
-                statusLabel.innerText = 'COMPUTING';
-                statusLabel.style.color = '#10b981';
+                statusLabel.innerText = 'ACTIVE';
+                toggleStateText.innerText = 'ON';
+                toggleStateText.classList.remove('off');
             } else {
                 statusRing.classList.add('stopped');
-                statusLabel.innerText = 'STOPPED';
-                statusLabel.style.color = '#ef4444';
+                statusLabel.innerText = 'PAUSED';
+                toggleStateText.innerText = 'OFF';
+                toggleStateText.classList.add('off');
             }
         });
 
-        // Simulated background contribution tracking
-        let balance = 0.00;
+        let sessionBalance = 0.00;
+        let totalBalance = 12450.00;
+
         setInterval(() => {
             if (engineToggle.checked) {
                 const speedMultiplier = powerSlider.value / 50;
-                balance += 0.01 * speedMultiplier;
-                balanceLabel.innerText = balance.toFixed(2) + ' NXUS';
+                const incrementalEarn = 0.01 * speedMultiplier;
+                
+                sessionBalance += incrementalEarn;
+                totalBalance += incrementalEarn;
+                
+                sessionLabel.innerText = sessionBalance.toFixed(2) + ' NXUS';
+                totalLabel.innerText = totalBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' NXUS';
             }
         }, 3000);
     </script>
