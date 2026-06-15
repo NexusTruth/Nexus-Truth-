@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nexus Truth Client</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: #0b0f19;
+            color: #ffffff;
+            width: 400px;
+            height: 600px;
+            overflow: hidden;
+            border: 1px solid #1e293b;
+        }
+
+        /* Draggable Header acting as window frame */
+        .app-header {
+            background-color: #0f172a;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #1e293b;
+            -webkit-app-region: drag;
+        }
+
+        .brand {
+            font-weight: bold;
+            font-size: 16px;
+            letter-spacing: 1px;
+            color: #38bdf8;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            font-size: 16px;
+            -webkit-app-region: no-drag;
+        }
+
+        .close-btn:hover {
+            color: #ef4444;
+        }
+
+        .main-container {
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: calc(100% - 50px);
+            justify-content: space-between;
+        }
+
+        /* Glowing Status Ring */
+        .status-box {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            border: 4px solid #10b981;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .status-box.stopped {
+            border-color: #ef4444;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+        }
+
+        .status-text {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #64748b;
+            letter-spacing: 1px;
+        }
+
+        .status-value {
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        /* Info Cards */
+        .metrics-grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .metric-card {
+            background-color: #0f172a;
+            border: 1px solid #1e293b;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #f8fafc;
+        }
+
+        /* Controls Slider and Toggle */
+        .control-panel {
+            width: 100%;
+            background-color: #0f172a;
+            border: 1px solid #1e293b;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .control-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .control-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .slider-label {
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        .power-slider {
+            width: 60%;
+            accent-color: #38bdf8;
+            cursor: pointer;
+        }
+
+        /* Big Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #334155;
+            transition: .3s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #10b981;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Instructions Section */
+        .instructions-box {
+            font-size: 11px;
+            color: #64748b;
+            text-align: center;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-header">
+        <div class="brand">NEXUS TRUTH</div>
+        <button class="close-btn" id="closeBtn">✕</button>
+    </div>
+
+    <div class="main-container">
+        
+        <div class="status-box" id="statusRing">
+            <span class="status-text">Network State</span>
+            <span class="status-value" id="statusLabel">COMPUTING</span>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Global Supply</div>
+                <div class="metric-value">1,000,000,000 NXUS</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Your Balance</div>
+                <div class="metric-value" id="balanceLabel">0.00 NXUS</div>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <div class="control-row">
+                <span class="slider-label">Core Engine Switch</span>
+                <label class="switch">
+                    <input type="checkbox" id="engineToggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="control-row">
+                <span class="slider-label">CPU Power Allocation</span>
+                <input type="range" id="powerSlider" class="power-slider" min="10" max="90" value="50">
+            </div>
+        </div>
+
+        <div class="instructions-box">
+            Nexus software utilizes background processing capacity to execute decentralized AI calculations. Adjust the allocation slider or turn off the switch anytime to free up system memory.
+        </div>
+
+    </div>
+
+    <script>
+        const { remote } = require('electron');
+        const engineToggle = document.getElementById('engineToggle');
+        const statusRing = document.getElementById('statusRing');
+        const statusLabel = document.getElementById('statusLabel');
+        const powerSlider = document.getElementById('powerSlider');
+        const balanceLabel = document.getElementById('balanceLabel');
+        const closeBtn = document.getElementById('closeBtn');
+
+        // Close app logic
+        closeBtn.addEventListener('click', () => {
+            window.close();
+        });
+
+        // Kill Switch UX Logic
+        engineToggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                statusRing.classList.remove('stopped');
+                statusLabel.innerText = 'COMPUTING';
+                statusLabel.style.color = '#10b981';
+            } else {
+                statusRing.classList.add('stopped');
+                statusLabel.innerText = 'STOPPED';
+                statusLabel.style.color = '#ef4444';
+            }
+        });
+
+        // Simulated background contribution tracking
+        let balance = 0.00;
+        setInterval(() => {
+            if (engineToggle.checked) {
+                const speedMultiplier = powerSlider.value / 50;
+                balance += 0.01 * speedMultiplier;
+                balanceLabel.innerText = balance.toFixed(2) + ' NXUS';
+            }
+        }, 3000);
+    </script>
+</body>
+</html>
