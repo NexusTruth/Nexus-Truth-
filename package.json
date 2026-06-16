@@ -7,7 +7,8 @@
   "scripts": {
     "start": "electron .",
     "package-mac": "electron-packager . NexusTruth --platform=darwin --arch=x64 --out=dist/",
-    "package-win": "electron-packager . NexusTruth --platform=win32 --arch=x64 --out=dist/"
+    "package-win": "electron-packager . NexusTruth --platform=win32 --arch=x64 --out=dist/",
+    "package-linux": "electron-packager . NexusTruth --platform=linux --arch=x64 --out=dist/"
   },
   "devDependencies": {
     "electron": "^31.0.0",
