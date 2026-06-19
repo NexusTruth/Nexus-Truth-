@@ -482,7 +482,7 @@
         document.getElementById('maxBtn').addEventListener('click', () => { window.electronAPI.maximize(); });
         document.getElementById('closeBtn').addEventListener('click', () => { window.electronAPI.close(); });
 
-        // Placeholder Node ID (Will be replaced by true cryptographic wallet binding)
+        // Placeholder Node ID
         const randomId = "HW " + Math.random().toString(16).substring(2, 8).toUpperCase();
         document.getElementById('nodeId').innerText = randomId;
 
@@ -499,7 +499,7 @@
         const titleStatusDot = document.getElementById('titleStatusDot');
         const heroSubtitle = document.getElementById('heroSubtitle');
 
-        // Load Real Saved Data (will sit at 0.0000 until backend is connected)
+        // Load Real Saved Data
         let totalEarned = parseFloat(localStorage.getItem('nexusTotalEarned')) || 0.0000;
         document.getElementById('yieldValue').innerText = totalEarned.toFixed(4);
 
@@ -527,7 +527,7 @@
                 heroSubtitle.innerText = 'Engine active. Listening for AI compute tasks...';
                 
                 addLog(`SYSTEM: Engine started. Hardware allocated to ${powerSlider.value}%.`);
-                addLog('NETWORK: Awaiting real-world AI task allocation from Nexus Router...');
+                addLog('NETWORK: Awaiting real world AI task allocation from Nexus Router... ');
                 
                 uptimeInterval = setInterval(() => {
                     secondsActive++;
@@ -582,18 +582,16 @@
             }
         }
 
-        // Live Telemetry Listener (From main.cjs via preload.cjs)
+        // Live Telemetry Listener
         window.electronAPI.onTelemetry((data) => {
             if (!isEngineRunning) return;
 
-            // Apply visual cap based on user slider
             let cappedCpu = data.cpu;
             const currentLimit = parseInt(powerSlider.value);
             if (cappedCpu > currentLimit) {
                 cappedCpu = currentLimit - Math.floor(Math.random() * 3); 
             }
 
-            // Update UI Dials
             document.getElementById('cpuValue').innerHTML = `${cappedCpu}<span style="font-size: 16px;">%</span>`;
             document.getElementById('cpuText').innerText = `Capped at ${currentLimit}%`;
             document.getElementById('cpuBar').style.width = `${cappedCpu}%`;
