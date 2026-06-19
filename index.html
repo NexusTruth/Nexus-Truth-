@@ -47,7 +47,7 @@
             text-transform: uppercase;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .status-dot {
@@ -364,8 +364,22 @@
 
     <div class="titlebar">
         <div class="titlebar-brand">
-            <div class="status-dot paused" id="titleStatusDot"></div>
-            Nexus Truth Engine
+            <svg viewBox="0 0 100 100" style="width: 22px; height: 22px; margin-right: 4px;">
+                <circle cx="50" cy="50" r="45" fill="none" stroke="var(--primaryBlue)" stroke-width="5"/>
+                <circle cx="50" cy="20" r="3.5" fill="var(--primaryBlue)" />
+                <circle cx="35" cy="25" r="3.5" fill="var(--primaryBlue)" />
+                <circle cx="65" cy="25" r="3.5" fill="var(--primaryBlue)" />
+                <circle cx="25" cy="40" r="3.5" fill="var(--primaryBlue)" />
+                <circle cx="75" cy="40" r="3.5" fill="var(--primaryBlue)" />
+                <circle cx="20" cy="55" r="3.5" fill="var(--primaryBlue)" />
+                <circle cx="80" cy="55" r="3.5" fill="var(--primaryBlue)" />
+                <circle cx="30" cy="70" r="3.5" fill="var(--primaryBlue)" />
+                <circle cx="70" cy="70" r="3.5" fill="var(--primaryBlue)" />
+                <circle cx="50" cy="80" r="3.5" fill="var(--primaryBlue)" />
+                <circle cx="50" cy="50" r="4.5" fill="var(--primaryBlue)" />
+            </svg>
+            <span>NEXUS <span style="color: var(--primaryBlue);">TRUTH</span></span>
+            <div class="status-dot paused" id="titleStatusDot" style="margin-left: 8px;"></div>
         </div>
         <div class="window-controls">
             <button class="control-btn" id="minBtn">
