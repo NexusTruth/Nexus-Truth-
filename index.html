@@ -2,462 +2,351 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nexus Truth Client</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --primaryBlue: #2563eb;
-            --lightBlue: #eff6ff;
             --darkBlue: #1e3a8a;
+            --lightBlue: #eff6ff;
+            --successGreen: #10b981;
             --textMain: #0f172a;
             --textMuted: #475569;
-            --successGreen: #10b981;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            user-select: none;
+            --borderLight: #e2e8f0;
         }
 
         body {
-            background-color: transparent;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #ffffff;
             color: var(--textMain);
-            width: 800px;
-            height: 450px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .app-wrapper {
-            width: 100%;
-            height: 100%;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            background-color: #f8fafc;
-            border-radius: 24px;
-            border: 1px solid rgba(0, 0, 0, 0.08);
             overflow: hidden;
-            position: relative;
         }
 
-        .bg-flare-1 {
-            position: absolute;
-            top: -50px;
-            left: -50px;
-            width: 300px;
-            height: 300px;
-            background: var(--primaryBlue);
-            opacity: 0.08;
-            filter: blur(60px);
-            border-radius: 50%;
-            z-index: 0;
-        }
-
-        .bg-flare-2 {
-            position: absolute;
-            bottom: -100px;
-            right: -50px;
-            width: 400px;
-            height: 400px;
-            background: var(--successGreen);
-            opacity: 0.05;
-            filter: blur(70px);
-            border-radius: 50%;
-            z-index: 0;
-        }
-
-        .app-header {
-            padding: 15px 25px;
+        .titlebar {
+            -webkit-app-region: drag;
+            height: 48px;
+            background: #ffffff;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            -webkit-app-region: drag;
-            position: relative;
-            z-index: 10;
+            padding: 0 20px;
+            border-bottom: 1px solid var(--borderLight);
+            flex-shrink: 0;
         }
 
-        .brand-container {
+        .titlebar-brand {
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
             display: flex;
             align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--successGreen);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--successGreen);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .window-controls {
+            -webkit-app-region: no-drag;
+            display: flex;
             gap: 12px;
         }
 
-        .logo-globe-placeholder {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background-image: radial-gradient(var(--primaryBlue) 20%, transparent 20%), radial-gradient(var(--primaryBlue) 20%, transparent 20%);
-            background-size: 8px 8px;
-            background-position: 0 0, 4px 4px;
-            opacity: 0.8;
-        }
-
-        .brand-nexus {
-            font-weight: 800;
-            font-size: 20px;
-            letter-spacing: 0.5px;
-            color: var(--darkBlue);
-        }
-
-        .brand-truth {
-            font-weight: 800;
-            font-size: 20px;
-            letter-spacing: 0.5px;
-            color: var(--primaryBlue);
-        }
-
-        .close-btn {
-            background: none;
+        .control-btn {
+            background: transparent;
             border: none;
             color: var(--textMuted);
             cursor: pointer;
-            font-size: 24px;
-            font-weight: bold;
-            -webkit-app-region: no-drag;
-            transition: color 0.2s;
-        }
-
-        .close-btn:hover {
-            color: #ef4444;
-        }
-
-        .main-content {
-            display: flex;
-            flex-direction: row;
-            flex: 1;
-            padding: 25px 30px;
-            gap: 30px;
-            position: relative;
-            z-index: 10;
-        }
-
-        .glass-card {
-            background: rgba(255, 255, 255, 0.65);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.9);
-            border-radius: 20px;
-            box-shadow: 0 10px 40px -10px rgba(37, 99, 235, 0.1);
-        }
-
-        .status-column {
-            flex: 0 0 240px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .status-box {
-            position: relative;
-            width: 180px;
-            height: 180px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.8);
-            border: 6px solid #00ff66; 
-            box-shadow: 0 0 30px rgba(0, 255, 102, 0.3), inset 0 0 15px rgba(0, 255, 102, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .status-box.stopped {
-            border-color: #94a3b8;
-            box-shadow: 0 10px 25px rgba(148, 163, 184, 0.15), inset 0 0 0 transparent;
-        }
-
-        .status-text {
-            font-size: 13px;
-            font-weight: 800;
-            text-transform: uppercase;
-            color: var(--textMuted);
-            letter-spacing: 1px;
-        }
-
-        .status-value {
-            font-size: 26px;
-            font-weight: 800;
-            color: #00cc52;
-            margin-top: 5px;
-        }
-
-        .status-box.stopped .status-value {
-            color: var(--textMuted);
-        }
-
-        .controls-column {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .metrics-row {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .metric-card {
-            flex: 1;
-            padding: 18px 15px;
-            text-align: left;
-        }
-
-        .metric-label {
-            font-size: 11px;
-            font-weight: 800;
-            color: var(--textMuted);
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
-
-        .metric-value {
-            font-size: 15px;
-            font-weight: 800;
-            color: var(--textMain);
-        }
-
-        .control-card {
-            padding: 25px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .toggle-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-        }
-
-        .control-title {
-            font-size: 17px;
-            font-weight: 800;
-            color: var(--textMain);
-        }
-
-        .toggle-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .toggle-label {
-            font-size: 18px;
-            font-weight: 800;
-            color: #00cc52;
-            width: 40px;
-            text-align: right;
-        }
-
-        .toggle-label.off {
-            color: var(--textMuted);
-        }
-
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 32px;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider-toggle {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #cbd5e1;
-            transition: .3s;
-            border-radius: 34px;
-        }
-
-        .slider-toggle:before {
-            position: absolute;
-            content: "";
-            height: 24px;
             width: 24px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .3s;
-            border-radius: 50%;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        input:checked + .slider-toggle {
-            background-color: #00ff66;
-        }
-
-        input:checked + .slider-toggle:before {
-            transform: translateX(28px);
-        }
-
-        .slider-row {
+            height: 24px;
+            border-radius: 6px;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
         }
 
-        .slider-header {
+        .control-btn:hover {
+            background: var(--lightBlue);
+            color: var(--primaryBlue);
+        }
+
+        .control-btn.close:hover {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .content {
+            padding: 40px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .hero-section {
+            margin-bottom: 40px;
+        }
+
+        .hero-title {
+            font-size: 32px;
+            font-weight: 800;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+        }
+
+        .hero-subtitle {
+            color: var(--textMuted);
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: #ffffff;
+            border: 1px solid var(--borderLight);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .card-header {
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: var(--textMuted);
+            margin-bottom: 15px;
+            letter-spacing: 1px;
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
-            margin-bottom: 12px;
         }
 
-        .idiot-proof-text {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--textMuted);
-            margin-top: 4px;
-        }
-
-        .percentage-indicator {
-            font-size: 22px;
+        .card-value {
+            font-size: 36px;
             font-weight: 800;
             color: var(--primaryBlue);
         }
 
-        .power-slider {
+        .progress-container {
             width: 100%;
-            accent-color: var(--primaryBlue);
-            cursor: pointer;
             height: 8px;
+            background-color: var(--lightBlue);
             border-radius: 4px;
+            margin-top: 15px;
+            overflow: hidden;
         }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primaryBlue);
+            border-radius: 4px;
+            transition: width 0.5s ease-out;
+            width: 0%;
+        }
+
+        .temp-bar {
+            background-color: var(--successGreen);
+        }
+
+        .warning-state {
+            background-color: #f59e0b !important;
+        }
+
+        .danger-state {
+            background-color: #dc2626 !important;
+        }
+
+        .telemetry-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        .log-container {
+            background: #f8fafc;
+            border: 1px solid var(--borderLight);
+            border-radius: 12px;
+            padding: 20px;
+            height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--textMuted);
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+
+        .log-time {
+            color: var(--primaryBlue);
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
     </style>
 </head>
 <body>
-    <div class="app-wrapper">
-        <div class="bg-flare-1"></div>
-        <div class="bg-flare-2"></div>
 
-        <div class="app-header">
-            <div class="brand-container">
-                <div class="logo-globe-placeholder"></div>
-                <div class="brand">
-                    <span class="brand-nexus">NEXUS</span> <span class="brand-truth">TRUTH</span>
-                </div>
-            </div>
-            <button class="close-btn" id="closeBtn">✕</button>
+    <div class="titlebar">
+        <div class="titlebar-brand">
+            <div class="status-dot"></div>
+            Nexus Truth Engine
+        </div>
+        <div class="window-controls">
+            <button class="control-btn" id="minBtn">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+            <button class="control-btn" id="maxBtn">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+            </button>
+            <button class="control-btn close" id="closeBtn">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="hero-section">
+            <h1 class="hero-title">Node Active</h1>
+            <p class="hero-subtitle">Providing computing resources to the AI network.</p>
         </div>
 
-        <div class="main-content">
-            <div class="status-column glass-card">
-                <div class="status-box" id="statusRing">
-                    <span class="status-text">System Status</span>
-                    <span class="status-value" id="statusLabel">ACTIVE</span>
+        <div class="grid-container">
+            <div class="card">
+                <div class="card-header">
+                    <span>CPU Processing Load</span>
+                    <span id="cpuText">0%</span>
+                </div>
+                <div class="telemetry-row">
+                    <div class="card-value" id="cpuValue">0<span style="font-size: 16px;">%</span></div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="cpuBar"></div>
                 </div>
             </div>
 
-            <div class="controls-column">
-                <div class="metrics-row">
-                    <div class="metric-card glass-card">
-                        <div class="metric-label">Network Supply</div>
-                        <div class="metric-value">1,000,000,000 NXUS</div>
-                    </div>
-                    <div class="metric-card glass-card">
-                        <div class="metric-label">Total Balance</div>
-                        <div class="metric-value" id="totalLabel">12,450.00 NXUS</div>
-                    </div>
-                    <div class="metric-card glass-card">
-                        <div class="metric-label">Session Earned</div>
-                        <div class="metric-value" id="sessionLabel">0.00 NXUS</div>
-                    </div>
+            <div class="card">
+                <div class="card-header">
+                    <span>Ice Age Thermal Status</span>
+                    <span id="tempText">Optimal</span>
                 </div>
+                <div class="telemetry-row">
+                    <div class="card-value" id="tempValue" style="color: var(--successGreen);">0<span style="font-size: 16px;">°C</span></div>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar temp-bar" id="tempBar"></div>
+                </div>
+            </div>
 
-                <div class="control-card glass-card">
-                    <div class="toggle-row">
-                        <div class="control-title">AI Processing</div>
-                        <div class="toggle-wrapper">
-                            <span class="toggle-label" id="toggleStateText">ON</span>
-                            <label class="switch">
-                                <input type="checkbox" id="engineToggle" checked>
-                                <span class="slider-toggle"></span>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div class="slider-row">
-                        <div class="slider-header">
-                            <div>
-                                <div class="control-title">Compute Allocation</div>
-                                <div class="idiot-proof-text">Select how much power you want to be used for computing in background</div>
-                            </div>
-                            <span class="percentage-indicator" id="sliderValue">50%</span>
-                        </div>
-                        <input type="range" id="powerSlider" class="power-slider" min="10" max="90" value="50">
-                    </div>
+            <div class="card full-width">
+                <div class="card-header">
+                    <span>System Memory Allocation</span>
+                    <span id="ramText">0%</span>
                 </div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="ramBar"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card full-width" style="padding: 0; border: none; box-shadow: none;">
+            <div class="card-header" style="margin-bottom: 10px;">Network Event Log</div>
+            <div class="log-container" id="logBox">
+                <div class="log-entry"><span class="log-time">SYSTEM</span> Establishing secure connection to Nexus routing engine...</div>
+                <div class="log-entry"><span class="log-time">SYSTEM</span> Handshake verified. Awaiting encrypted AI workload payload...</div>
             </div>
         </div>
     </div>
 
     <script>
-        const engineToggle = document.getElementById('engineToggle');
-        const toggleStateText = document.getElementById('toggleStateText');
-        const statusRing = document.getElementById('statusRing');
-        const statusLabel = document.getElementById('statusLabel');
-        const powerSlider = document.getElementById('powerSlider');
-        const sliderValue = document.getElementById('sliderValue');
-        const totalLabel = document.getElementById('totalLabel');
-        const sessionLabel = document.getElementById('sessionLabel');
-        const closeBtn = document.getElementById('closeBtn');
-
-        powerSlider.addEventListener('input', (e) => {
-            sliderValue.innerText = e.target.value + '%';
+        document.getElementById('minBtn').addEventListener('click', () => {
+            window.electronAPI.minimize();
         });
 
-        closeBtn.addEventListener('click', () => {
-            window.close();
+        document.getElementById('maxBtn').addEventListener('click', () => {
+            window.electronAPI.maximize();
         });
 
-        engineToggle.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                statusRing.classList.remove('stopped');
-                statusLabel.innerText = 'ACTIVE';
-                toggleStateText.innerText = 'ON';
-                toggleStateText.classList.remove('off');
+        document.getElementById('closeBtn').addEventListener('click', () => {
+            window.electronAPI.close();
+        });
+
+        function addLog(message) {
+            const logBox = document.getElementById('logBox');
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="log-time">[${time}]</span> ${message}`;
+            logBox.prepend(entry);
+            if (logBox.children.length > 15) {
+                logBox.removeChild(logBox.lastChild);
+            }
+        }
+
+        window.electronAPI.onTelemetry((data) => {
+            document.getElementById('cpuValue').innerHTML = `${data.cpu}<span style="font-size: 16px;">%</span>`;
+            document.getElementById('cpuText').innerText = `${data.cpu}%`;
+            document.getElementById('cpuBar').style.width = `${data.cpu}%`;
+
+            document.getElementById('ramText').innerText = `${data.ram}% Allocated`;
+            document.getElementById('ramBar').style.width = `${data.ram}%`;
+
+            const tempValue = document.getElementById('tempValue');
+            const tempBar = document.getElementById('tempBar');
+            const tempText = document.getElementById('tempText');
+
+            tempValue.innerHTML = `${data.temp}<span style="font-size: 16px;">°C</span>`;
+            tempBar.style.width = `${Math.min((data.temp / 100) * 100, 100)}%`;
+
+            if (data.temp < 60) {
+                tempValue.style.color = 'var(--successGreen)';
+                tempBar.className = 'progress-bar temp-bar';
+                tempText.innerText = 'Optimal';
+            } else if (data.temp >= 60 && data.temp < 80) {
+                tempValue.style.color = '#f59e0b';
+                tempBar.className = 'progress-bar warning-state';
+                tempText.innerText = 'Elevated';
             } else {
-                statusRing.classList.add('stopped');
-                statusLabel.innerText = 'PAUSED';
-                toggleStateText.innerText = 'OFF';
-                toggleStateText.classList.add('off');
+                tempValue.style.color = '#dc2626';
+                tempBar.className = 'progress-bar danger-state';
+                tempText.innerText = 'Ice Age Throttle Active';
+                addLog('WARNING: Thermal limits reached. Ice Age Protocol throttling applied.');
+            }
+
+            if (Math.random() > 0.8) {
+                addLog('Processing fragmented neural network dataset...');
             }
         });
-
-        let sessionBalance = 0.00;
-        let totalBalance = 12450.00;
-
-        setInterval(() => {
-            if (engineToggle.checked) {
-                const speedMultiplier = powerSlider.value / 50;
-                const incrementalEarn = 0.01 * speedMultiplier;
-                
-                sessionBalance += incrementalEarn;
-                totalBalance += incrementalEarn;
-                
-                sessionLabel.innerText = sessionBalance.toFixed(2) + ' NXUS';
-                totalLabel.innerText = totalBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' NXUS';
-            }
-        }, 3000);
     </script>
 </body>
 </html>
