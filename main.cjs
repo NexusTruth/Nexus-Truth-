@@ -4,7 +4,12 @@ const os = require('os');
 
 let mainWindow;
 
+// CPU Tracking Variables
 let previousCpuTimes = getCpuTimes();
+
+// Ice Age Protocol State Variables
+let iceAgeEngaged = false;
+let simulatedTemp = 38;
 
 function getCpuTimes() {
     const cpus = os.cpus();
@@ -46,21 +51,40 @@ function createWindow() {
 
     mainWindow.loadFile('index.html');
 
+    // Real World Master Control Loop (Fires every 2 seconds)
     setInterval(() => {
-        const cpuLoad = calculateCpuUsage();
+        const realCpuLoad = calculateCpuUsage();
         const totalMem = os.totalmem();
         const freeMem = os.freemem();
         const usedMemPercentage = Math.floor(((totalMem - freeMem) / totalMem) * 100);
 
-        const baseTemp = 38;
-        const tempFluctuation = Math.floor(Math.random() * 4);
-        const temperature = baseTemp + Math.floor(cpuLoad * 0.45) + tempFluctuation;
+        // ICE AGE PROTOCOL: Auto Resume State Machine (Option A)
+        if (iceAgeEngaged) {
+            // Hardware is locked out for safety.
+            // Once the real AI worker is attached, CPU thread allocation is forced to 0 here.
+            simulatedTemp -= 4; // Cool down the hardware
+            
+            if (simulatedTemp <= 60) {
+                iceAgeEngaged = false; // Safe temp reached, auto resume
+                console.log('SYSTEM: Hardware cooled to 60°C. Ice Age Protocol lifted. Resuming tasks.');
+            }
+        } else {
+            // Normal operation. 
+            // Note: We will replace simulatedTemp with 'systeminformation' BIOS reads in the next phase.
+            simulatedTemp = 38 + Math.floor(realCpuLoad * 0.45);
 
-        if (mainWindow && !mainWindow.isDestroyed()) {
+            if (simulatedTemp >= 80) {
+                iceAgeEngaged = true; // Engage hard cutoff
+                console.log('WARNING: Thermal limit (80°C) breached. Ice Age Protocol ENGAGED. Halting all worker threads.');
+            }
+        }
+
+        // Transmit state to the Frontend UI
             mainWindow.webContents.send('telemetry-data', {
-                cpu: cpuLoad,
+                cpu: iceAgeEngaged ? 0 : realCpuLoad, // Force reporting 0% when throttled to prove safety
                 ram: usedMemPercentage,
-                temp: temperature
+                temp: simulatedTemp,
+                throttled: iceAgeEngaged
             });
         }
     }, 2000);
