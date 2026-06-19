@@ -482,7 +482,7 @@
         document.getElementById('maxBtn').addEventListener('click', () => { window.electronAPI.maximize(); });
         document.getElementById('closeBtn').addEventListener('click', () => { window.electronAPI.close(); });
 
-        // Node ID Generation (Will be replaced by actual cryptographic wallet binding later)
+        // Placeholder Node ID (Will be replaced by true cryptographic wallet binding)
         const randomId = "HW " + Math.random().toString(16).substring(2, 8).toUpperCase();
         document.getElementById('nodeId').innerText = randomId;
 
@@ -499,7 +499,7 @@
         const titleStatusDot = document.getElementById('titleStatusDot');
         const heroSubtitle = document.getElementById('heroSubtitle');
 
-        // Load Real Saved Data
+        // Load Real Saved Data (will sit at 0.0000 until backend is connected)
         let totalEarned = parseFloat(localStorage.getItem('nexusTotalEarned')) || 0.0000;
         document.getElementById('yieldValue').innerText = totalEarned.toFixed(4);
 
@@ -508,7 +508,6 @@
             powerLimitText.innerText = e.target.value + '%';
             if(isEngineRunning) {
                 addLog(`SYSTEM: Resource allocation limit manually adjusted to ${e.target.value}%`);
-                // Note: To make this REAL, we will eventually pass e.target.value to main.cjs to enforce OS limits
             }
         });
 
@@ -554,7 +553,6 @@
                 
                 clearInterval(uptimeInterval);
                 
-                // Reset visual dials
                 document.getElementById('cpuValue').innerHTML = `0<span style="font-size: 16px;">%</span>`;
                 document.getElementById('cpuText').innerText = `Paused`;
                 document.getElementById('cpuBar').style.width = `0%`;
@@ -623,7 +621,6 @@
                 tempValue.style.color = '#dc2626';
                 tempBar.className = 'progress-bar danger-state';
                 tempText.innerText = 'Ice Age Throttle Active';
-                // Only log warning occasionally so it doesn't flood the UI
                 if (Math.random() > 0.9) {
                     addLog('WARNING: Thermal limits reached. Ice Age Protocol throttling applied');
                 }
