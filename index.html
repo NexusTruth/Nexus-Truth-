@@ -370,7 +370,7 @@
 
     <div class="titlebar">
         <div class="titlebar-brand">
-            <img src="logo.png" alt="Nexus Truth Logo" class="header-logo">
+            <img src="logo.png" alt="Nexus Truth Logo" class="header-logo" onerror="this.style.display='none'">
             <span>NEXUS <span style="color: var(--primaryBlue);">TRUTH</span></span>
             <div class="status-dot paused" id="titleStatusDot" style="margin-left: 8px;"></div>
         </div>
@@ -446,10 +446,10 @@
                     <span id="tempText">Standby</span>
                 </div>
                 <div class="telemetry-row">
-                    <div class="card-value" id="tempValue" style="color: var(--successGreen);">38<span style="font-size: 16px;">°C</span></div>
+                    <div class="card-value" id="tempValue" style="color: var(--successGreen);">0<span style="font-size: 16px;">°C</span></div>
                 </div>
                 <div class="progress-container">
-                    <div class="progress-bar temp-bar" id="tempBar" style="width: 38%"></div>
+                    <div class="progress-bar temp-bar" id="tempBar" style="width: 0%"></div>
                 </div>
             </div>
 
@@ -477,21 +477,17 @@
     </div>
 
     <script>
-        // Window Controls
         document.getElementById('minBtn').addEventListener('click', () => { window.electronAPI.minimize(); });
         document.getElementById('maxBtn').addEventListener('click', () => { window.electronAPI.maximize(); });
         document.getElementById('closeBtn').addEventListener('click', () => { window.electronAPI.close(); });
 
-        // Placeholder Node ID
         const randomId = "HW " + Math.random().toString(16).substring(2, 8).toUpperCase();
         document.getElementById('nodeId').innerText = randomId;
 
-        // Variables
         let secondsActive = 0;
         let uptimeInterval;
         let isEngineRunning = false;
         
-        // DOM Elements
         const toggleBtn = document.getElementById('toggleEngineBtn');
         const powerSlider = document.getElementById('powerSlider');
         const powerLimitText = document.getElementById('powerLimitText');
@@ -499,11 +495,9 @@
         const titleStatusDot = document.getElementById('titleStatusDot');
         const heroSubtitle = document.getElementById('heroSubtitle');
 
-        // Load Real Saved Data
-        let totalEarned = parseFloat(localStorage.getItem('nexusTotalEarned')) || 0.0000;
-        document.getElementById('yieldValue').innerText = totalEarned.toFixed(4);
+        localStorage.removeItem('nexusTotalEarned');
+        document.getElementById('yieldValue').innerText = "0.0000";
 
-        // Slider Interaction
         powerSlider.addEventListener('input', (e) => {
             powerLimitText.innerText = e.target.value + '%';
             if(isEngineRunning) {
@@ -511,12 +505,11 @@
             }
         });
 
-        // Engine Toggle Interaction
         toggleBtn.addEventListener('click', () => {
             isEngineRunning = !isEngineRunning;
             if (isEngineRunning) {
                 toggleBtn.innerText = 'Pause Engine';
-                toggleBtn.className = 'btn-toggle btn-stop';
+                toggleBtn.className = 'btn-toggle btn-start';
                 
                 mainStatusBadge.innerText = 'Awaiting Payload';
                 mainStatusBadge.style.background = '#fef3c7';
@@ -527,7 +520,7 @@
                 heroSubtitle.innerText = 'Engine active. Listening for AI compute tasks...';
                 
                 addLog(`SYSTEM: Engine started. Hardware allocated to ${powerSlider.value}%.`);
-                addLog('NETWORK: Awaiting real world AI task allocation from Nexus Router... ');
+                addLog('NETWORK: Awaiting real world AI task allocation from Nexus Router...');
                 
                 uptimeInterval = setInterval(() => {
                     secondsActive++;
@@ -561,15 +554,14 @@
                 document.getElementById('ramText').innerText = `Paused`;
                 document.getElementById('ramBar').style.width = `0%`;
                 
-                document.getElementById('tempValue').innerHTML = `38<span style="font-size: 16px;">°C</span>`;
+                document.getElementById('tempValue').innerHTML = `0<span style="font-size: 16px;">°C</span>`;
                 document.getElementById('tempText').innerText = `Standby`;
-                document.getElementById('tempBar').style.width = `38%`;
+                document.getElementById('tempBar').style.width = `0%`;
                 document.getElementById('tempBar').className = 'progress-bar temp-bar';
                 document.getElementById('tempValue').style.color = 'var(--successGreen)';
             }
         });
 
-        // Logger Function
         function addLog(message) {
             const logBox = document.getElementById('logBox');
             const time = new Date().toLocaleTimeString('en-US', { hour12: false });
@@ -582,7 +574,6 @@
             }
         }
 
-        // Live Telemetry Listener
         window.electronAPI.onTelemetry((data) => {
             if (!isEngineRunning) return;
 
