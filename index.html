@@ -47,7 +47,13 @@
             text-transform: uppercase;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+        }
+        
+        .header-logo {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
         }
 
         .status-dot {
@@ -364,20 +370,7 @@
 
     <div class="titlebar">
         <div class="titlebar-brand">
-            <svg viewBox="0 0 100 100" style="width: 22px; height: 22px; margin-right: 4px;">
-                <circle cx="50" cy="50" r="45" fill="none" stroke="var(--primaryBlue)" stroke-width="5"/>
-                <circle cx="50" cy="20" r="3.5" fill="var(--primaryBlue)" />
-                <circle cx="35" cy="25" r="3.5" fill="var(--primaryBlue)" />
-                <circle cx="65" cy="25" r="3.5" fill="var(--primaryBlue)" />
-                <circle cx="25" cy="40" r="3.5" fill="var(--primaryBlue)" />
-                <circle cx="75" cy="40" r="3.5" fill="var(--primaryBlue)" />
-                <circle cx="20" cy="55" r="3.5" fill="var(--primaryBlue)" />
-                <circle cx="80" cy="55" r="3.5" fill="var(--primaryBlue)" />
-                <circle cx="30" cy="70" r="3.5" fill="var(--primaryBlue)" />
-                <circle cx="70" cy="70" r="3.5" fill="var(--primaryBlue)" />
-                <circle cx="50" cy="80" r="3.5" fill="var(--primaryBlue)" />
-                <circle cx="50" cy="50" r="4.5" fill="var(--primaryBlue)" />
-            </svg>
+            <img src="logo.png" alt="Nexus Truth Logo" class="header-logo">
             <span>NEXUS <span style="color: var(--primaryBlue);">TRUTH</span></span>
             <div class="status-dot paused" id="titleStatusDot" style="margin-left: 8px;"></div>
         </div>
@@ -416,12 +409,12 @@
 
         <div class="info-grid">
             <div class="info-card">
-                <div class="info-title">Pulse Identity</div>
-                <div class="info-value" id="nodeId">Connecting</div>
+                <div class="info-title">Hardware Identity</div>
+                <div class="info-value" id="nodeId">Awaiting Uplink</div>
             </div>
             <div class="info-card">
-                <div class="info-title">Global Supply</div>
-                <div class="info-value">2,450 Nodes</div>
+                <div class="info-title">Tasks Completed</div>
+                <div class="info-value">0</div>
             </div>
             <div class="info-card">
                 <div class="info-title">Session Uptime</div>
@@ -475,33 +468,30 @@
         </div>
 
         <div class="card" style="padding: 0; border: none; box-shadow: none; grid-column: span 3;">
-            <div class="card-header" style="margin-bottom: 10px;">Network Event Log</div>
+            <div class="card-header" style="margin-bottom: 10px;">Hardware Execution Log</div>
             <div class="log-container" id="logBox">
-                <div class="log-entry"><span class="log-time">SYSTEM</span> Harvester client initialized. Ready for user configuration.</div>
+                <div class="log-entry"><span class="log-time">SYSTEM</span> Harvester client initialized. Engine is currently paused.</div>
+                <div class="log-entry"><span class="log-time">SYSTEM</span> Awaiting user initialization to bind to Nexus routing engine...</div>
             </div>
         </div>
     </div>
 
     <script>
-        document.getElementById('minBtn').addEventListener('click', () => {
-            window.electronAPI.minimize();
-        });
+        // Window Controls
+        document.getElementById('minBtn').addEventListener('click', () => { window.electronAPI.minimize(); });
+        document.getElementById('maxBtn').addEventListener('click', () => { window.electronAPI.maximize(); });
+        document.getElementById('closeBtn').addEventListener('click', () => { window.electronAPI.close(); });
 
-        document.getElementById('maxBtn').addEventListener('click', () => {
-            window.electronAPI.maximize();
-        });
-
-        document.getElementById('closeBtn').addEventListener('click', () => {
-            window.electronAPI.close();
-        });
-
-        const randomId = "NX " + Math.random().toString(16).substring(2, 6).toUpperCase();
+        // Node ID Generation (Will be replaced by actual cryptographic wallet binding later)
+        const randomId = "HW " + Math.random().toString(16).substring(2, 8).toUpperCase();
         document.getElementById('nodeId').innerText = randomId;
 
+        // Variables
         let secondsActive = 0;
         let uptimeInterval;
-        
         let isEngineRunning = false;
+        
+        // DOM Elements
         const toggleBtn = document.getElementById('toggleEngineBtn');
         const powerSlider = document.getElementById('powerSlider');
         const powerLimitText = document.getElementById('powerLimitText');
@@ -509,31 +499,36 @@
         const titleStatusDot = document.getElementById('titleStatusDot');
         const heroSubtitle = document.getElementById('heroSubtitle');
 
+        // Load Real Saved Data
         let totalEarned = parseFloat(localStorage.getItem('nexusTotalEarned')) || 0.0000;
         document.getElementById('yieldValue').innerText = totalEarned.toFixed(4);
 
+        // Slider Interaction
         powerSlider.addEventListener('input', (e) => {
             powerLimitText.innerText = e.target.value + '%';
             if(isEngineRunning) {
-                addLog('Resource allocation limit adjusted to ' + e.target.value + '%');
+                addLog(`SYSTEM: Resource allocation limit manually adjusted to ${e.target.value}%`);
+                // Note: To make this REAL, we will eventually pass e.target.value to main.cjs to enforce OS limits
             }
         });
 
+        // Engine Toggle Interaction
         toggleBtn.addEventListener('click', () => {
             isEngineRunning = !isEngineRunning;
             if (isEngineRunning) {
                 toggleBtn.innerText = 'Pause Engine';
                 toggleBtn.className = 'btn-toggle btn-stop';
                 
-                mainStatusBadge.innerText = 'Secured and Synced';
-                mainStatusBadge.style.background = '#d1fae5';
-                mainStatusBadge.style.color = '#047857';
-                mainStatusBadge.style.borderColor = '#a7f3d0';
+                mainStatusBadge.innerText = 'Awaiting Payload';
+                mainStatusBadge.style.background = '#fef3c7';
+                mainStatusBadge.style.color = '#d97706';
+                mainStatusBadge.style.borderColor = '#fde68a';
                 
                 titleStatusDot.classList.remove('paused');
-                heroSubtitle.innerText = 'Providing computing resources to the AI network';
+                heroSubtitle.innerText = 'Engine active. Listening for AI compute tasks...';
                 
-                addLog('Engine started. Allocating ' + powerSlider.value + '% compute power to network.');
+                addLog(`SYSTEM: Engine started. Hardware allocated to ${powerSlider.value}%.`);
+                addLog('NETWORK: Awaiting real-world AI task allocation from Nexus Router...');
                 
                 uptimeInterval = setInterval(() => {
                     secondsActive++;
@@ -555,10 +550,11 @@
                 titleStatusDot.classList.add('paused');
                 heroSubtitle.innerText = 'Engine is currently paused';
                 
-                addLog('Engine paused. Compute allocation safely suspended.');
+                addLog('SYSTEM: Engine paused. CPU allocation successfully released to OS.');
                 
                 clearInterval(uptimeInterval);
                 
+                // Reset visual dials
                 document.getElementById('cpuValue').innerHTML = `0<span style="font-size: 16px;">%</span>`;
                 document.getElementById('cpuText').innerText = `Paused`;
                 document.getElementById('cpuBar').style.width = `0%`;
@@ -575,15 +571,7 @@
             }
         });
 
-        function generateYield(cpuLoad) {
-            if (isEngineRunning && cpuLoad > 2) {
-                const limitMultiplier = powerSlider.value / 100;
-                totalEarned += 0.0015 * limitMultiplier;
-                document.getElementById('yieldValue').innerText = totalEarned.toFixed(4);
-                localStorage.setItem('nexusTotalEarned', totalEarned.toFixed(4));
-            }
-        }
-
+        // Logger Function
         function addLog(message) {
             const logBox = document.getElementById('logBox');
             const time = new Date().toLocaleTimeString('en-US', { hour12: false });
@@ -596,15 +584,18 @@
             }
         }
 
+        // Live Telemetry Listener (From main.cjs via preload.cjs)
         window.electronAPI.onTelemetry((data) => {
             if (!isEngineRunning) return;
 
+            // Apply visual cap based on user slider
             let cappedCpu = data.cpu;
             const currentLimit = parseInt(powerSlider.value);
             if (cappedCpu > currentLimit) {
                 cappedCpu = currentLimit - Math.floor(Math.random() * 3); 
             }
 
+            // Update UI Dials
             document.getElementById('cpuValue').innerHTML = `${cappedCpu}<span style="font-size: 16px;">%</span>`;
             document.getElementById('cpuText').innerText = `Capped at ${currentLimit}%`;
             document.getElementById('cpuBar').style.width = `${cappedCpu}%`;
@@ -632,13 +623,10 @@
                 tempValue.style.color = '#dc2626';
                 tempBar.className = 'progress-bar danger-state';
                 tempText.innerText = 'Ice Age Throttle Active';
-                addLog('WARNING: Thermal limits reached. Ice Age Protocol throttling applied');
-            }
-
-            generateYield(cappedCpu);
-
-            if (Math.random() > 0.8 && cappedCpu > 10) {
-                addLog('Processing encrypted AI workload fragmentation');
+                // Only log warning occasionally so it doesn't flood the UI
+                if (Math.random() > 0.9) {
+                    addLog('WARNING: Thermal limits reached. Ice Age Protocol throttling applied');
+                }
             }
         });
     </script>
