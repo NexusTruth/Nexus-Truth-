@@ -1,4 +1,8 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
+
+// CRITICAL FIX: Disables GPU acceleration to prevent Windows laptops from going blank when rendering the interface
+app.disableHardwareAcceleration();
+
 const path = require('path');
 const si = require('systeminformation');
 
