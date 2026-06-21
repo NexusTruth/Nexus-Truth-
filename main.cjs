@@ -4,6 +4,7 @@ const si = require('systeminformation');
 
 let mainWindow;
 let iceAgeEngaged = false;
+let overloadCounter = 0;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -30,13 +31,30 @@ function createWindow() {
             const realCpu = Math.floor(cpuLoad.currentLoad);
             const realMem = Math.floor((mem.active / mem.total) * 100);
             const realTemp = temp.main || 0; 
+            const isTempBlocked = (realTemp === 0);
 
-            // Ice Age Protocol logic using real sensor data
-            if (realTemp >= 80) {
-                iceAgeEngaged = true;
-                console.log('CRITICAL: Thermal limit 80C breached. Ice Age Protocol ENGAGED.');
-            } else if (realTemp <= 60) {
-                iceAgeEngaged = false;
+            // Ice Age Protocol logic using real sensor data or fallback CPU
+            if (!isTempBlocked) {
+                if (realTemp >= 80) {
+                    iceAgeEngaged = true;
+                    console.log('CRITICAL: Thermal limit breached. Ice Age Protocol ENGAGED.');
+                } else if (realTemp <= 60) {
+                    iceAgeEngaged = false;
+                }
+            } else {
+                // Fallback protection if Windows blocks temperature sensors
+                if (realCpu >= 90) {
+                    overloadCounter++;
+                    if (overloadCounter >= 3) {
+                        iceAgeEngaged = true;
+                        console.log('CRITICAL: CPU Load limit breached while temp blocked. Ice Age Protocol ENGAGED.');
+                    }
+                } else {
+                    overloadCounter = 0;
+                    if (realCpu <= 60) {
+                        iceAgeEngaged = false;
+                    }
+                }
             }
 
             if (mainWindow && !mainWindow.isDestroyed()) {
@@ -44,7 +62,8 @@ function createWindow() {
                     cpu: iceAgeEngaged ? 0 : realCpu,
                     ram: realMem,
                     temp: realTemp,
-                    throttled: iceAgeEngaged
+                    throttled: iceAgeEngaged,
+                    tempBlocked: isTempBlocked
                 });
             }
         } catch (error) {
