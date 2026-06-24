@@ -1,0 +1,50 @@
+name: Build Nexus Truth Worker
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  windows_job:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Initialize Go Environment
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+        
+    - name: Compile Windows Administrator Executable
+      env:
+        GOOS: windows
+        GOARCH: amd64
+      run: go build -o worker.exe main.go
+      
+    - name: Save Windows Executable
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-distribution
+        path: worker.exe
+
+  linux_job:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Initialize Go Environment
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+        
+    - name: Compile Linux AppImage Binary
+      env:
+        GOOS: linux
+        GOARCH: amd64
+      run: go build -o worker_linux main.go
+      
+    - name: Save Linux Binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-distribution
+        path: worker_linux
