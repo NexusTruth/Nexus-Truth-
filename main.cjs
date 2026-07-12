@@ -5,6 +5,7 @@ app.disableHardwareAcceleration();
 
 const path = require('path');
 const si = require('systeminformation');
+const http = require('http');
 
 let mainWindow;
 let iceAgeEngaged = false;
@@ -61,6 +62,7 @@ function createWindow() {
                 }
             }
 
+            // 1. Original IPC Communication for local interface
             if (mainWindow && !mainWindow.isDestroyed()) {
                 mainWindow.webContents.send('telemetry_data', {
                     cpu: iceAgeEngaged ? 0 : realCpu,
@@ -70,6 +72,45 @@ function createWindow() {
                     tempBlocked: isTempBlocked
                 });
             }
+
+            // 2. New HTTP Broadcast for external network integration
+            const metrics = {
+                cpuUsage: iceAgeEngaged ? 0 : realCpu,
+                cpuTemperature: realTemp,
+                memoryAllocated: mem.active,
+                memorySystem: mem.total,
+                status: "active"
+            };
+
+            const payload = JSON.stringify(metrics);
+            const ports = [3000, 5173, 8080, 8000, 3001];
+
+            ports.forEach(port => {
+                const options = {
+                    hostname: '127.0.0.1',
+                    port: port,
+                    path: '/api/metrics',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Content-Length': Buffer.byteLength(payload)
+                    }
+                };
+
+                const req = http.request(options, res => {
+                    if (res.statusCode === 200) {
+                        // Connection successful
+                    }
+                });
+
+                req.on('error', error => {
+                    // Port inactive
+                });
+
+                req.write(payload);
+                req.end();
+            });
+
         } catch (error) {
             console.error('Hardware telemetry error:', error);
         }
