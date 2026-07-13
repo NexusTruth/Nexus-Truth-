@@ -180,7 +180,7 @@
                     const s = String(secondsActive % 60).padStart(2, '0');
                     document.getElementById('uptimeValue').innerText = `${h}:${m}:${s}`;
                 }, 1000);
-                networkInterval = setInterval(pollNetwork, 3000);
+                networkInterval = setInterval(pollNetwork, 10000);
             } else {
                 toggleBtn.innerText = 'Start Engine'; toggleBtn.className = 'btn-toggle btn-start';
                 mainStatusBadge.innerText = 'System Offline'; mainStatusBadge.style.background = '#ffffff'; mainStatusBadge.style.color = 'var(--dangerRed)'; mainStatusBadge.style.borderColor = 'var(--dangerRed)';
@@ -205,7 +205,6 @@
         async function pollNetwork() {
             if (!isEngineRunning) return;
             try {
-                // THE CACHE-BUSTER: Forces a fresh pull from the live server every 3 seconds
                 const response = await fetch(`${API_TARGET}/telemetry/stream?t=${Date.now()}`, { 
                     cache: 'no-store' 
                 });
@@ -213,16 +212,37 @@
 
                 if (!data.logs || data.logs.length === 0) return;
 
-                // FIRST BOOT SYNC: Synchronize our counter with the server to ignore history
-                if (lastLogCount === 0) {
-                    lastLogCount = data.logs.length;
+                if (typeof window.prevLogs === 'undefined') {
+                    window.prevLogs = [...data.logs];
                     return;
                 }
 
-                // CONTINUOUS LOOP: Your original elegant logic. If the array grew, we have new jobs!
-                if (data.logs.length > lastLogCount) {
-                    const newLogs = data.logs.slice(lastLogCount);
-                    lastLogCount = data.logs.length; // Update our tracker to the new length
+                const currentLogs = data.logs;
+                const prevLogs = window.prevLogs;
+                let newLogs = [];
+
+                if (JSON.stringify(currentLogs) !== JSON.stringify(prevLogs)) {
+                    
+                    let matchLength = 0;
+                    const minLength = Math.min(currentLogs.length, prevLogs.length);
+                    
+                    for (let i = minLength; i >= 1; i--) {
+                        const prevSlice = prevLogs.slice(prevLogs.length - i).join('|');
+                        const currSlice = currentLogs.slice(0, i).join('|');
+                        
+                        if (prevSlice === currSlice) {
+                            matchLength = i;
+                            break;
+                        }
+                    }
+
+                    if (matchLength < currentLogs.length) {
+                        newLogs = currentLogs.slice(matchLength);
+                    } else if (matchLength === 0) {
+                        newLogs = currentLogs;
+                    }
+
+                    window.prevLogs = [...currentLogs];
 
                     for (let log of newLogs) {
                         if (log.includes("Allocating idle compute nodes for")) {
@@ -239,7 +259,6 @@
                     }
                 }
             } catch (error) {
-                // Silently handle network drops so the loop never breaks
             }
         }
 
