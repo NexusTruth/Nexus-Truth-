@@ -202,25 +202,48 @@
             if (logBox.children.length > 15) logBox.removeChild(logBox.lastChild);
         }
 
-        async function pollNetwork() {
-            if (!isEngineRunning) return;
-            try {
-                const response = await fetch(`${API_TARGET}/telemetry/stream`);
-                const data = await response.json();
-                if (data.logs && data.logs.length > lastLogCount) {
-                    const newLogs = data.logs.slice(lastLogCount);
-                    lastLogCount = data.logs.length;
-                    for (let log of newLogs) {
-                        if (log.includes("Allocating idle compute nodes for")) {
-                            const imageUri = log.split("for ")[1];
-                            addLog(`[NETWORK] Payload received: ${imageUri}`);
-                            addLog(`[SYSTEM] Downloading container...`);
-                            setTimeout(() => { addLog(`[SYSTEM] Container ${imageUri} processed successfully.`); addLog(`[VAULT] Pending NXUS distribution to worker wallet.`); }, 6000);
-                        }
+ async function pollNetwork() {
+    if (!isEngineRunning) return;
+    try {
+        const response = await fetch(`${API_TARGET}/telemetry/stream`);
+        const data = await response.json();
+        
+        if (data.logs && data.logs.length > 0) {
+            // Initialize memory on first run so we do not process old history jobs
+            if (typeof pollNetwork.lastSeenLog === 'undefined') {
+                pollNetwork.lastSeenLog = data.logs[data.logs.length - 1];
+                return; 
+            }
+
+            // Find where our last processed job is in the server list
+            let startIndex = data.logs.lastIndexOf(pollNetwork.lastSeenLog);
+            
+            // Slice out only the brand new jobs that arrived after our last check
+            let newLogs = (startIndex !== -1) ? data.logs.slice(startIndex + 1) : data.logs;
+
+            if (newLogs.length > 0) {
+                // Update memory with the newest job
+                pollNetwork.lastSeenLog = newLogs[newLogs.length - 1];
+                
+                for (let log of newLogs) {
+                    if (log.includes("Allocating idle compute nodes for")) {
+                        const imageUri = log.split("for ")[1];
+                        addLog(`[NETWORK] Payload received: ${imageUri}`);
+                        addLog(`[SYSTEM] Downloading container...`);
+                        
+                        setTimeout(() => { 
+                            addLog(`[SYSTEM] Container ${imageUri} processed successfully.`); 
+                            addLog(`[VAULT] Pending NXUS distribution to worker wallet.`); 
+                            addLog(`[SYSTEM] Hardware returning to standby. Awaiting next task...`);
+                        }, 6000);
                     }
                 }
-            } catch (error) {}
+            }
         }
+    } catch (error) {
+        // Silently handle network drops so the application never crashes
+    }
+}
 
         window.electronAPI.onTelemetry((data) => {
             if (!isEngineRunning) return;
