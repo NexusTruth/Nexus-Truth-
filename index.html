@@ -205,12 +205,15 @@
 async function pollNetwork() {
     if (!isEngineRunning) return;
     try {
-        const response = await fetch(`${API_TARGET}/telemetry/stream`);
+        // THE FIX: Cache-Buster. Forces the background loop to fetch live data every 3 seconds.
+        const response = await fetch(`${API_TARGET}/telemetry/stream?t=${Date.now()}`, { 
+            cache: 'no-store' 
+        });
         const data = await response.json();
 
         if (!data.logs || data.logs.length === 0) return;
 
-        // Initialize memory on first run
+        // FIRST BOOT: Memorize current state silently so we only catch NEW jobs moving forward.
         if (typeof window.prevLogs === 'undefined') {
             window.prevLogs = [...data.logs];
             return;
@@ -220,33 +223,34 @@ async function pollNetwork() {
         const prevLogs = window.prevLogs;
         let newLogs = [];
 
-        // Detect if the array has changed since the last check
+        // CONTINUOUS LOOP: Check if the live server data actually changed
         if (JSON.stringify(currentLogs) !== JSON.stringify(prevLogs)) {
             
             let matchLength = 0;
             const minLength = Math.min(currentLogs.length, prevLogs.length);
             
-            // Find exactly how many items shifted by comparing the overlap
-            for (let i = 1; i <= minLength; i++) {
+            // Compare arrays to find the exact overlap
+            for (let i = minLength; i >= 1; i--) {
                 const prevSlice = prevLogs.slice(prevLogs.length - i).join('|');
                 const currSlice = currentLogs.slice(0, i).join('|');
                 
                 if (prevSlice === currSlice) {
                     matchLength = i;
+                    break;
                 }
             }
 
-            // Extract only the brand new items appended to the end
+            // Extract only the brand new items
             if (matchLength < currentLogs.length) {
                 newLogs = currentLogs.slice(matchLength);
             } else if (matchLength === 0) {
                 newLogs = currentLogs;
             }
 
-            // Save the new state for the next check
+            // Save the new state for the next 3-second check
             window.prevLogs = [...currentLogs];
 
-            // Process the verified new jobs
+            // Process the verified new jobs continuously
             for (let log of newLogs) {
                 if (log.includes("Allocating idle compute nodes for")) {
                     const imageUri = log.split("for ")[1];
@@ -262,10 +266,9 @@ async function pollNetwork() {
             }
         }
     } catch (error) {
-        // Silently handle network drops
+        // Silently handle network drops so the loop never breaks
     }
 }
-        window.electronAPI.onTelemetry((data) => {
             if (!isEngineRunning) return;
             let cappedCpu = data.cpu; const currentLimit = parseInt(powerSlider.value);
             if (cappedCpu > currentLimit) cappedCpu = currentLimit - Math.floor(Math.random() * 3); 
