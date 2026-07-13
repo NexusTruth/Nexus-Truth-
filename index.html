@@ -116,7 +116,7 @@
             </div>
             <div class="card">
                 <div class="card-header"><span>Ice Age Thermal Status</span><span id="tempText">Standby</span></div>
-                <div class="telemetry-row"><div class="card-value" id="tempValue" style="color: var(--successGreen);">0<span style="font-size: 16px;">Â°C</span></div></div>
+                <div class="telemetry-row"><div class="card-value" id="tempValue" style="color: var(--successGreen);">0<span style="font-size: 16px;">¡ÆC</span></div></div>
                 <div class="progress-container"><div class="progress-bar temp-bar" id="tempBar" style="width: 0%"></div></div>
             </div>
             <div class="card">
@@ -189,7 +189,7 @@
                 clearInterval(uptimeInterval); clearInterval(networkInterval);
                 document.getElementById('cpuValue').innerHTML = `0<span style="font-size: 16px;">%</span>`; document.getElementById('cpuText').innerText = `Paused`; document.getElementById('cpuBar').style.width = `0%`;
                 document.getElementById('ramValueNum').innerHTML = `0<span style="font-size: 16px;">%</span>`; document.getElementById('ramText').innerText = `Paused`; document.getElementById('ramBar').style.width = `0%`;
-                document.getElementById('tempValue').innerHTML = `0<span style="font-size: 16px;">Â°C</span>`; document.getElementById('tempText').innerText = `Standby`; document.getElementById('tempBar').style.width = `0%`; document.getElementById('tempBar').className = 'progress-bar temp-bar'; document.getElementById('tempValue').style.color = 'var(--successGreen)';
+                document.getElementById('tempValue').innerHTML = `0<span style="font-size: 16px;">¡ÆC</span>`; document.getElementById('tempText').innerText = `Standby`; document.getElementById('tempBar').style.width = `0%`; document.getElementById('tempBar').className = 'progress-bar temp-bar'; document.getElementById('tempValue').style.color = 'var(--successGreen)';
             }
         });
 
@@ -208,57 +208,41 @@
                 const response = await fetch(`${API_TARGET}/telemetry/stream?t=${Date.now()}`, { 
                     cache: 'no-store' 
                 });
+                
+                if (!response.ok) {
+                    addLog(`NETWORK WARNING: Server returned status ${response.status}`);
+                    return;
+                }
+
                 const data = await response.json();
 
                 if (!data.logs || data.logs.length === 0) return;
 
-                if (typeof window.prevLogs === 'undefined') {
-                    window.prevLogs = [...data.logs];
+                if (lastLogCount === 0) {
+                    lastLogCount = data.logs.length;
                     return;
                 }
 
-                const currentLogs = data.logs;
-                const prevLogs = window.prevLogs;
-                let newLogs = [];
-
-                if (JSON.stringify(currentLogs) !== JSON.stringify(prevLogs)) {
-                    
-                    let matchLength = 0;
-                    const minLength = Math.min(currentLogs.length, prevLogs.length);
-                    
-                    for (let i = minLength; i >= 1; i--) {
-                        const prevSlice = prevLogs.slice(prevLogs.length - i).join('|');
-                        const currSlice = currentLogs.slice(0, i).join('|');
-                        
-                        if (prevSlice === currSlice) {
-                            matchLength = i;
-                            break;
-                        }
-                    }
-
-                    if (matchLength < currentLogs.length) {
-                        newLogs = currentLogs.slice(matchLength);
-                    } else if (matchLength === 0) {
-                        newLogs = currentLogs;
-                    }
-
-                    window.prevLogs = [...currentLogs];
+                if (data.logs.length > lastLogCount) {
+                    const newLogs = data.logs.slice(lastLogCount);
+                    lastLogCount = data.logs.length; 
 
                     for (let log of newLogs) {
                         if (log.includes("Allocating idle compute nodes for")) {
                             const imageUri = log.split("for ")[1];
-                            addLog(`[NETWORK] Payload received: ${imageUri}`);
-                            addLog(`[SYSTEM] Downloading container...`);
+                            addLog(`NETWORK: Payload received: ${imageUri}`);
+                            addLog(`SYSTEM: Downloading container...`);
 
                             setTimeout(() => {
-                                addLog(`[SYSTEM] Container ${imageUri} processed successfully.`);
-                                addLog(`[VAULT] Pending NXUS distribution to worker wallet.`);
-                                addLog(`[SYSTEM] Hardware returning to standby. Awaiting next task...`);
+                                addLog(`SYSTEM: Container ${imageUri} processed successfully.`);
+                                addLog(`VAULT: Pending NXUS distribution to worker wallet.`);
+                                addLog(`SYSTEM: Hardware returning to standby. Awaiting next task...`);
                             }, 6000);
                         }
                     }
                 }
             } catch (error) {
+                addLog(`ERROR: Connection failed. ${error.message}`);
             }
         }
 
@@ -273,7 +257,7 @@
                 if (!modalTriggered) { safetyModal.style.display = 'flex'; addLog('SYSTEM: Hardware safety verification required. Awaiting Admin privileges.'); modalTriggered = true; }
                 tempValue.innerHTML = `LOCKED`; tempValue.style.fontSize = '24px'; tempValue.style.color = 'var(--textMuted)'; tempBar.style.width = `0%`; tempText.innerText = 'Awaiting Safety Verification';
             } else {
-                tempValue.innerHTML = `${data.temp}<span style="font-size: 16px;">Â°C</span>`; tempValue.style.fontSize = '36px'; tempBar.style.width = `${Math.min((data.temp / 100) * 100, 100)}%`;
+                tempValue.innerHTML = `${data.temp}<span style="font-size: 16px;">¡ÆC</span>`; tempValue.style.fontSize = '36px'; tempBar.style.width = `${Math.min((data.temp / 100) * 100, 100)}%`;
                 if (data.temp < 60) { tempValue.style.color = 'var(--successGreen)'; tempBar.className = 'progress-bar temp-bar'; tempText.innerText = 'Optimal'; } 
                 else if (data.temp >= 60 && data.temp < 80) { tempValue.style.color = '#f59e0b'; tempBar.className = 'progress-bar warning-state'; tempText.innerText = 'Elevated'; } 
                 else { tempValue.style.color = 'var(--dangerRed)'; tempBar.className = 'progress-bar danger-state'; tempText.innerText = 'Ice Age Throttle Active'; if (Math.random() > 0.9) addLog('WARNING: Thermal limits reached. Ice Age Protocol throttling applied'); }
