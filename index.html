@@ -202,49 +202,69 @@
             if (logBox.children.length > 15) logBox.removeChild(logBox.lastChild);
         }
 
- async function pollNetwork() {
+async function pollNetwork() {
     if (!isEngineRunning) return;
     try {
         const response = await fetch(`${API_TARGET}/telemetry/stream`);
         const data = await response.json();
-        
-        if (data.logs && data.logs.length > 0) {
-            // Initialize memory on first run so we do not process old history jobs
-            if (typeof pollNetwork.lastSeenLog === 'undefined') {
-                pollNetwork.lastSeenLog = data.logs[data.logs.length - 1];
-                return; 
+
+        if (!data.logs || data.logs.length === 0) return;
+
+        // Initialize memory on first run
+        if (typeof window.prevLogs === 'undefined') {
+            window.prevLogs = [...data.logs];
+            return;
+        }
+
+        const currentLogs = data.logs;
+        const prevLogs = window.prevLogs;
+        let newLogs = [];
+
+        // Detect if the array has changed since the last check
+        if (JSON.stringify(currentLogs) !== JSON.stringify(prevLogs)) {
+            
+            let matchLength = 0;
+            const minLength = Math.min(currentLogs.length, prevLogs.length);
+            
+            // Find exactly how many items shifted by comparing the overlap
+            for (let i = 1; i <= minLength; i++) {
+                const prevSlice = prevLogs.slice(prevLogs.length - i).join('|');
+                const currSlice = currentLogs.slice(0, i).join('|');
+                
+                if (prevSlice === currSlice) {
+                    matchLength = i;
+                }
             }
 
-            // Find where our last processed job is in the server list
-            let startIndex = data.logs.lastIndexOf(pollNetwork.lastSeenLog);
-            
-            // Slice out only the brand new jobs that arrived after our last check
-            let newLogs = (startIndex !== -1) ? data.logs.slice(startIndex + 1) : data.logs;
+            // Extract only the brand new items appended to the end
+            if (matchLength < currentLogs.length) {
+                newLogs = currentLogs.slice(matchLength);
+            } else if (matchLength === 0) {
+                newLogs = currentLogs;
+            }
 
-            if (newLogs.length > 0) {
-                // Update memory with the newest job
-                pollNetwork.lastSeenLog = newLogs[newLogs.length - 1];
-                
-                for (let log of newLogs) {
-                    if (log.includes("Allocating idle compute nodes for")) {
-                        const imageUri = log.split("for ")[1];
-                        addLog(`[NETWORK] Payload received: ${imageUri}`);
-                        addLog(`[SYSTEM] Downloading container...`);
-                        
-                        setTimeout(() => { 
-                            addLog(`[SYSTEM] Container ${imageUri} processed successfully.`); 
-                            addLog(`[VAULT] Pending NXUS distribution to worker wallet.`); 
-                            addLog(`[SYSTEM] Hardware returning to standby. Awaiting next task...`);
-                        }, 6000);
-                    }
+            // Save the new state for the next check
+            window.prevLogs = [...currentLogs];
+
+            // Process the verified new jobs
+            for (let log of newLogs) {
+                if (log.includes("Allocating idle compute nodes for")) {
+                    const imageUri = log.split("for ")[1];
+                    addLog(`[NETWORK] Payload received: ${imageUri}`);
+                    addLog(`[SYSTEM] Downloading container...`);
+
+                    setTimeout(() => {
+                        addLog(`[SYSTEM] Container ${imageUri} processed successfully.`);
+                        addLog(`[VAULT] Pending NXUS distribution to worker wallet.`);
+                        addLog(`[SYSTEM] Hardware returning to standby. Awaiting next task...`);
+                    }, 6000);
                 }
             }
         }
     } catch (error) {
-        // Silently handle network drops so the application never crashes
+        // Silently handle network drops
     }
 }
-
         window.electronAPI.onTelemetry((data) => {
             if (!isEngineRunning) return;
             let cappedCpu = data.cpu; const currentLimit = parseInt(powerSlider.value);
