@@ -116,7 +116,7 @@
             </div>
             <div class="card">
                 <div class="card-header"><span>Ice Age Thermal Status</span><span id="tempText">Standby</span></div>
-                <div class="telemetry-row"><div class="card-value" id="tempValue" style="color: var(--successGreen);">0<span style="font-size: 16px;">°C</span></div></div>
+                <div class="telemetry-row"><div class="card-value" id="tempValue" style="color: var(--successGreen);">0<span style="font-size: 16px;">&deg;C</span></div></div>
                 <div class="progress-container"><div class="progress-bar temp-bar" id="tempBar" style="width: 0%"></div></div>
             </div>
             <div class="card">
@@ -189,7 +189,7 @@
                 clearInterval(uptimeInterval); clearInterval(networkInterval);
                 document.getElementById('cpuValue').innerHTML = `0<span style="font-size: 16px;">%</span>`; document.getElementById('cpuText').innerText = `Paused`; document.getElementById('cpuBar').style.width = `0%`;
                 document.getElementById('ramValueNum').innerHTML = `0<span style="font-size: 16px;">%</span>`; document.getElementById('ramText').innerText = `Paused`; document.getElementById('ramBar').style.width = `0%`;
-                document.getElementById('tempValue').innerHTML = `0<span style="font-size: 16px;">°C</span>`; document.getElementById('tempText').innerText = `Standby`; document.getElementById('tempBar').style.width = `0%`; document.getElementById('tempBar').className = 'progress-bar temp-bar'; document.getElementById('tempValue').style.color = 'var(--successGreen)';
+                document.getElementById('tempValue').innerHTML = `0<span style="font-size: 16px;">&deg;C</span>`; document.getElementById('tempText').innerText = `Standby`; document.getElementById('tempBar').style.width = `0%`; document.getElementById('tempBar').className = 'progress-bar temp-bar'; document.getElementById('tempValue').style.color = 'var(--successGreen)';
             }
         });
 
@@ -281,7 +281,7 @@
                 if (!modalTriggered) { safetyModal.style.display = 'flex'; addLog('SYSTEM: Hardware safety verification required. Awaiting Admin privileges.'); modalTriggered = true; }
                 tempValue.innerHTML = `LOCKED`; tempValue.style.fontSize = '24px'; tempValue.style.color = 'var(--textMuted)'; tempBar.style.width = `0%`; tempText.innerText = 'Awaiting Safety Verification';
             } else {
-                tempValue.innerHTML = `${data.temp}<span style="font-size: 16px;">°C</span>`; tempValue.style.fontSize = '36px'; tempBar.style.width = `${Math.min((data.temp / 100) * 100, 100)}%`;
+                tempValue.innerHTML = `${data.temp}<span style="font-size: 16px;">&deg;C</span>`; tempValue.style.fontSize = '36px'; tempBar.style.width = `${Math.min((data.temp / 100) * 100, 100)}%`;
                 if (data.temp < 60) { tempValue.style.color = 'var(--successGreen)'; tempBar.className = 'progress-bar temp-bar'; tempText.innerText = 'Optimal'; } 
                 else if (data.temp >= 60 && data.temp < 80) { tempValue.style.color = '#f59e0b'; tempBar.className = 'progress-bar warning-state'; tempText.innerText = 'Elevated'; } 
                 else { tempValue.style.color = 'var(--dangerRed)'; tempBar.className = 'progress-bar danger-state'; tempText.innerText = 'Ice Age Throttle Active'; if (Math.random() > 0.9) addLog('WARNING: Thermal limits reached. Ice Age Protocol throttling applied'); }
