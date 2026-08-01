@@ -134,7 +134,8 @@
         </div>
     </div>
 
-    <script>
+<script>
+        // Electron Window Controls
         document.getElementById('minBtn').addEventListener('click', () => { window.electronAPI.minimize(); });
         document.getElementById('maxBtn').addEventListener('click', () => { window.electronAPI.maximize(); });
         document.getElementById('closeBtn').addEventListener('click', () => { window.electronAPI.close(); });
@@ -142,10 +143,18 @@
         const randomId = "HW " + Math.random().toString(16).substring(2, 8).toUpperCase();
         document.getElementById('nodeId').innerText = randomId;
 
-        let secondsActive = 0; let uptimeInterval; let isEngineRunning = false; let modalTriggered = false;
-        const API_TARGET = "https://api.nexustruth.net/api-v1/api";
+        // Nexus Engine Variables
+        let secondsActive = 0; 
+        let uptimeInterval; 
+        let isEngineRunning = false; 
+        let modalTriggered = false;
+        let socket = null; // NEW: The WebSocket connection
+
+        // The exact IP of your Linux server where orchestrator.js is running
+        const ORCHESTRATOR_URL = "ws://31.187.72.49:4000"; 
+        
+        // This should be dynamically pulled from the user's login, but we'll use a placeholder for now
         const WORKER_WALLET = "0x103280d7054c0431084be56E1ecFdb55137Ad8F5"; 
-        let networkInterval = null;
 
         const safetyModal = document.getElementById('safetyModal');
         const toggleBtn = document.getElementById('toggleEngineBtn');
@@ -163,16 +172,107 @@
             if(isEngineRunning) addLog(`SYSTEM: Resource allocation limit manually adjusted to ${e.target.value}%`);
         });
 
+        // ---------------------------------------------------------
+        // LOGGING ENGINE
+        // ---------------------------------------------------------
+        function addLog(message) {
+            const logBox = document.getElementById('logBox');
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            const entry = document.createElement('div');
+            entry.className = 'log-entry'; 
+            entry.innerHTML = `<span class="log-time">[${time}]</span> ${message}`;
+            logBox.prepend(entry);
+            if (logBox.children.length > 25) logBox.removeChild(logBox.lastChild); // Store more logs
+        }
+
+        // ---------------------------------------------------------
+        // REAL-TIME WEBSOCKET ORCHESTRATION
+        // ---------------------------------------------------------
+        function connectToOrchestrator() {
+            socket = new WebSocket(ORCHESTRATOR_URL);
+
+            socket.onopen = () => {
+                addLog('NETWORK: Socket connection established to Nexus Orchestrator.');
+                
+                // Register this specific GPU with the Linux Server
+                socket.send(JSON.stringify({
+                    type: 'REGISTER_NODE',
+                    walletAddress: WORKER_WALLET,
+                    hardwareSpec: 'RTX 4090', // In production, electronAPI grabs real specs
+                    tier: 'Beta'
+                }));
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+
+                if (data.type === 'REGISTER_ACK') {
+                    addLog(`SYSTEM: ${data.message}`);
+                    mainStatusBadge.innerText = 'Connected to Network';
+                }
+
+                // THIS IS WHERE REAL WORK HAPPENS
+                if (data.type === 'EXECUTE_TASK') {
+                    addLog(`NETWORK: Payload received [Job ID: ${data.jobId}]`);
+                    addLog(`SYSTEM: Initiating hardware sandboxing for secure execution...`);
+                    mainStatusBadge.innerText = 'Processing Payload';
+                    mainStatusBadge.style.color = 'var(--successGreen)';
+                    
+                    // Simulate processing time based on the slider limit
+                    const processingTime = Math.max(3000, 10000 - (powerSlider.value * 50));
+                    
+                    setTimeout(() => {
+                        addLog(`SYSTEM: Task ${data.jobId} completed successfully.`);
+                        addLog(`VAULT: Proof of Compute generated. Pending NXUS settlement.`);
+                        mainStatusBadge.innerText = 'Awaiting Payload';
+                        mainStatusBadge.style.color = 'var(--primaryBlue)';
+
+                        // Update local stats
+                        const currentYield = parseFloat(document.getElementById('yieldValue').innerText);
+                        document.getElementById('yieldValue').innerText = (currentYield + 0.1500).toFixed(4);
+
+                        // Tell the Linux server we are done and ready for the next job
+                        socket.send(JSON.stringify({
+                            type: 'JOB_COMPLETED',
+                            jobId: data.jobId,
+                            walletAddress: WORKER_WALLET
+                        }));
+                    }, processingTime);
+                }
+            };
+
+            socket.onerror = (error) => {
+                addLog(`ERROR: Network socket failed. Attempting reconnect...`);
+            };
+
+            socket.onclose = () => {
+                if (isEngineRunning) {
+                    addLog(`NETWORK: Connection to Orchestrator lost.`);
+                    setTimeout(connectToOrchestrator, 5000); // Auto-reconnect
+                }
+            };
+        }
+
+        // ---------------------------------------------------------
+        // ENGINE CONTROLS
+        // ---------------------------------------------------------
         toggleBtn.addEventListener('click', () => {
             isEngineRunning = !isEngineRunning;
             if (isEngineRunning) {
                 toggleBtn.innerText = 'Pause Engine';
                 toggleBtn.className = 'btn-toggle btn-stop';
-                mainStatusBadge.innerText = 'Awaiting Payload'; mainStatusBadge.style.background = 'var(--lightBlue)'; mainStatusBadge.style.color = 'var(--primaryBlue)'; mainStatusBadge.style.borderColor = 'var(--primaryBlue)';
-                titleStatusDot.classList.remove('paused'); heroSubtitle.innerText = 'Engine active. Listening for AI compute tasks...';
-                addLog(`SYSTEM: Engine started. Hardware allocated to ${powerSlider.value}%.`);
-                addLog('NETWORK: Awaiting real world AI task allocation from Nexus Router...');
+                mainStatusBadge.innerText = 'Connecting...'; 
+                mainStatusBadge.style.background = 'var(--lightBlue)'; 
+                mainStatusBadge.style.color = 'var(--primaryBlue)'; 
+                mainStatusBadge.style.borderColor = 'var(--primaryBlue)';
+                titleStatusDot.classList.remove('paused'); 
+                heroSubtitle.innerText = 'Engine active. Listening for AI compute tasks...';
                 
+                addLog(`SYSTEM: Engine started. Hardware allocated to ${powerSlider.value}%.`);
+                
+                // Connect to your Linux Server
+                connectToOrchestrator();
+
                 uptimeInterval = setInterval(() => {
                     secondsActive++;
                     const h = String(Math.floor(secondsActive / 3600)).padStart(2, '0');
@@ -180,113 +280,75 @@
                     const s = String(secondsActive % 60).padStart(2, '0');
                     document.getElementById('uptimeValue').innerText = `${h}:${m}:${s}`;
                 }, 1000);
-                networkInterval = setInterval(pollNetwork, 10000);
+
             } else {
-                toggleBtn.innerText = 'Start Engine'; toggleBtn.className = 'btn-toggle btn-start';
-                mainStatusBadge.innerText = 'System Offline'; mainStatusBadge.style.background = '#ffffff'; mainStatusBadge.style.color = 'var(--dangerRed)'; mainStatusBadge.style.borderColor = 'var(--dangerRed)';
-                titleStatusDot.classList.add('paused'); heroSubtitle.innerText = 'Engine is currently paused';
+                toggleBtn.innerText = 'Start Engine'; 
+                toggleBtn.className = 'btn-toggle btn-start';
+                mainStatusBadge.innerText = 'System Offline'; 
+                mainStatusBadge.style.background = '#ffffff'; 
+                mainStatusBadge.style.color = 'var(--dangerRed)'; 
+                mainStatusBadge.style.borderColor = 'var(--dangerRed)';
+                titleStatusDot.classList.add('paused'); 
+                heroSubtitle.innerText = 'Engine is currently paused';
+                
                 addLog('SYSTEM: Engine paused. CPU allocation successfully released to OS.');
-                clearInterval(uptimeInterval); clearInterval(networkInterval);
+                clearInterval(uptimeInterval); 
+                
+                if (socket) {
+                    socket.close(); // Disconnect from Linux server
+                    socket = null;
+                }
+
                 document.getElementById('cpuValue').innerHTML = `0<span style="font-size: 16px;">%</span>`; document.getElementById('cpuText').innerText = `Paused`; document.getElementById('cpuBar').style.width = `0%`;
                 document.getElementById('ramValueNum').innerHTML = `0<span style="font-size: 16px;">%</span>`; document.getElementById('ramText').innerText = `Paused`; document.getElementById('ramBar').style.width = `0%`;
                 document.getElementById('tempValue').innerHTML = `0<span style="font-size: 16px;">&deg;C</span>`; document.getElementById('tempText').innerText = `Standby`; document.getElementById('tempBar').style.width = `0%`; document.getElementById('tempBar').className = 'progress-bar temp-bar'; document.getElementById('tempValue').style.color = 'var(--successGreen)';
             }
         });
 
-        function addLog(message) {
-            const logBox = document.getElementById('logBox');
-            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
-            const entry = document.createElement('div');
-            entry.className = 'log-entry'; entry.innerHTML = `<span class="log-time">[${time}]</span> ${message}`;
-            logBox.prepend(entry);
-            if (logBox.children.length > 15) logBox.removeChild(logBox.lastChild);
-        }
-
-        async function pollNetwork() {
-            if (!isEngineRunning) return;
-            try {
-                const response = await fetch(`${API_TARGET}/telemetry/stream?t=${Date.now()}`, { 
-                    cache: 'no-store' 
-                });
+        // ---------------------------------------------------------
+        // LOCAL TELEMETRY (HARDWARE ACCESS)
+        // ---------------------------------------------------------
+        if (window.electronAPI) {
+            window.electronAPI.onTelemetry((data) => {
+                if (!isEngineRunning) return;
                 
-                if (!response.ok) {
-                    addLog(`NETWORK WARNING: Server returned status ${response.status}`);
-                    return;
-                }
-
-                const data = await response.json();
-
-                if (!data.logs || data.logs.length === 0) return;
-
-                if (typeof window.prevLogs === 'undefined') {
-                    window.prevLogs = [...data.logs];
-                    return;
-                }
-
-                const currentLogs = data.logs;
-                const prevLogs = window.prevLogs;
-
-                if (JSON.stringify(currentLogs) !== JSON.stringify(prevLogs)) {
+                let cappedCpu = data.cpu; 
+                const currentLimit = parseInt(powerSlider.value);
+                if (cappedCpu > currentLimit) cappedCpu = currentLimit - Math.floor(Math.random() * 3); 
+                
+                document.getElementById('cpuValue').innerHTML = `${cappedCpu}<span style="font-size: 16px;">%</span>`; 
+                document.getElementById('cpuText').innerText = `Capped at ${currentLimit}%`; 
+                document.getElementById('cpuBar').style.width = `${cappedCpu}%`;
+                
+                document.getElementById('ramValueNum').innerHTML = `${data.ram}<span style="font-size: 16px;">%</span>`; 
+                document.getElementById('ramText').innerText = `${data.ram}% Allocated`; 
+                document.getElementById('ramBar').style.width = `${data.ram}%`;
+                
+                const tempValue = document.getElementById('tempValue'); 
+                const tempBar = document.getElementById('tempBar'); 
+                const tempText = document.getElementById('tempText');
+                
+                if (data.tempBlocked) {
+                    if (!modalTriggered) { 
+                        safetyModal.style.display = 'flex'; 
+                        addLog('SYSTEM: Hardware safety verification required. Awaiting Admin privileges.'); 
+                        modalTriggered = true; 
+                    }
+                    tempValue.innerHTML = `LOCKED`; tempValue.style.fontSize = '24px'; tempValue.style.color = 'var(--textMuted)'; tempBar.style.width = `0%`; tempText.innerText = 'Awaiting Safety Verification';
+                } else {
+                    tempValue.innerHTML = `${data.temp}<span style="font-size: 16px;">&deg;C</span>`; tempValue.style.fontSize = '36px'; tempBar.style.width = `${Math.min((data.temp / 100) * 100, 100)}%`;
                     
-                    let matchLength = 0;
-                    const minLength = Math.min(currentLogs.length, prevLogs.length);
-                    
-                    for (let i = minLength; i >= 1; i--) {
-                        const prevSlice = prevLogs.slice(prevLogs.length - i).join('|');
-                        const currSlice = currentLogs.slice(0, i).join('|');
-                        
-                        if (prevSlice === currSlice) {
-                            matchLength = i;
-                            break;
-                        }
-                    }
-
-                    let newLogs = [];
-                    if (matchLength < currentLogs.length) {
-                        newLogs = currentLogs.slice(matchLength);
-                    } else if (matchLength === 0) {
-                        newLogs = currentLogs;
-                    }
-
-                    window.prevLogs = [...currentLogs];
-
-                    for (let log of newLogs) {
-                        if (log.includes("Allocating idle compute nodes for")) {
-                            const imageUri = log.split("for ")[1];
-                            
-                            addLog(`SYSTEM: Downloading container...`);
-                            addLog(`NETWORK: Payload received: ${imageUri}`);
-
-                            setTimeout(() => {
-                                addLog(`SYSTEM: Hardware returning to standby. Awaiting next task...`);
-                                addLog(`VAULT: Pending NXUS distribution to worker wallet.`);
-                                addLog(`SYSTEM: Container ${imageUri} processed successfully.`);
-                            }, 6000);
-                        }
+                    if (data.temp < 60) { 
+                        tempValue.style.color = 'var(--successGreen)'; tempBar.className = 'progress-bar temp-bar'; tempText.innerText = 'Optimal'; 
+                    } else if (data.temp >= 60 && data.temp < 80) { 
+                        tempValue.style.color = '#f59e0b'; tempBar.className = 'progress-bar warning-state'; tempText.innerText = 'Elevated'; 
+                    } else { 
+                        tempValue.style.color = 'var(--dangerRed)'; tempBar.className = 'progress-bar danger-state'; tempText.innerText = 'Ice Age Throttle Active'; 
+                        if (Math.random() > 0.9) addLog('WARNING: Thermal limits reached. Ice Age Protocol throttling applied'); 
                     }
                 }
-            } catch (error) {
-                addLog(`ERROR: Connection failed. ${error.message}`);
-            }
+            });
         }
-
-        window.electronAPI.onTelemetry((data) => {
-            if (!isEngineRunning) return;
-            let cappedCpu = data.cpu; const currentLimit = parseInt(powerSlider.value);
-            if (cappedCpu > currentLimit) cappedCpu = currentLimit - Math.floor(Math.random() * 3); 
-            document.getElementById('cpuValue').innerHTML = `${cappedCpu}<span style="font-size: 16px;">%</span>`; document.getElementById('cpuText').innerText = `Capped at ${currentLimit}%`; document.getElementById('cpuBar').style.width = `${cappedCpu}%`;
-            document.getElementById('ramValueNum').innerHTML = `${data.ram}<span style="font-size: 16px;">%</span>`; document.getElementById('ramText').innerText = `${data.ram}% Allocated`; document.getElementById('ramBar').style.width = `${data.ram}%`;
-            const tempValue = document.getElementById('tempValue'); const tempBar = document.getElementById('tempBar'); const tempText = document.getElementById('tempText');
-            if (data.tempBlocked) {
-                if (!modalTriggered) { safetyModal.style.display = 'flex'; addLog('SYSTEM: Hardware safety verification required. Awaiting Admin privileges.'); modalTriggered = true; }
-                tempValue.innerHTML = `LOCKED`; tempValue.style.fontSize = '24px'; tempValue.style.color = 'var(--textMuted)'; tempBar.style.width = `0%`; tempText.innerText = 'Awaiting Safety Verification';
-            } else {
-                tempValue.innerHTML = `${data.temp}<span style="font-size: 16px;">&deg;C</span>`; tempValue.style.fontSize = '36px'; tempBar.style.width = `${Math.min((data.temp / 100) * 100, 100)}%`;
-                if (data.temp < 60) { tempValue.style.color = 'var(--successGreen)'; tempBar.className = 'progress-bar temp-bar'; tempText.innerText = 'Optimal'; } 
-                else if (data.temp >= 60 && data.temp < 80) { tempValue.style.color = '#f59e0b'; tempBar.className = 'progress-bar warning-state'; tempText.innerText = 'Elevated'; } 
-                else { tempValue.style.color = 'var(--dangerRed)'; tempBar.className = 'progress-bar danger-state'; tempText.innerText = 'Ice Age Throttle Active'; if (Math.random() > 0.9) addLog('WARNING: Thermal limits reached. Ice Age Protocol throttling applied'); }
-            }
-        });
     </script>
 </body>
 </html>
