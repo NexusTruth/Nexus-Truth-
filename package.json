@@ -18,6 +18,14 @@
       "requestedExecutionLevel": "requireAdministrator",
       "target": "nsis"
     },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Nexus Truth Harvester"
+    },
     "linux": {
       "target": "AppImage",
       "category": "Utility"
