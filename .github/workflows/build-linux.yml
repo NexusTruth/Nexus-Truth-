@@ -1,0 +1,22 @@
+name: Build Nexus Linux Node
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Dependencies
+        run: npm install
+      - name: Build Linux Executable
+        run: npx electron-builder --linux --publish never
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NexusTruthSetup-Linux
+          path: dist/*.AppImage
