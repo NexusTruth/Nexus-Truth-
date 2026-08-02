@@ -1,10 +1,24 @@
 {
-  "name": "nexus-truth-client",
+  "name": "nexus-truth-core",
+  "productName": "Nexus Truth Core",
   "version": "1.0.0",
-  "description": "Nexus Truth Idle Computing Client",
+  "private": true,
   "main": "main.cjs",
-  "type": "commonjs",
-  "dependencies": {
-    "systeminformation": "^5.31.7"
+  "author": "Nexus Truth Team <support@nexustruth.com>",
+  "license": "MIT",
+  "build": {
+    "appId": "com.nexustruth.core",
+    "productName": "Nexus Truth Core",
+    "directories": {
+      "output": "dist"
+    },
+    "linux": {
+      "target": [
+        "deb"
+      ],
+      "maintainer": "Nexus Truth Team <support@nexustruth.com>",
+      "category": "Utility",
+      "desktopName": "nexus-truth-core"
+    }
   }
 }
